@@ -97,6 +97,16 @@ using Pkg
 Pkg.test("Pulumi")
 ```
 
+### Regenerating Proto Files
+
+When Pulumi releases new protocol versions, regenerate the Julia bindings:
+
+```bash
+julia --project=. gen/generate_protos.jl
+```
+
+This uses ProtoBuf.jl's native parser (no external protoc required).
+
 ### Project Structure
 
 ```

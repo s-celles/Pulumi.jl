@@ -1,6 +1,6 @@
 module protobuf
 
-include("empty_pb.jl")
 include("struct_pb.jl")
+include("empty_pb.jl")
 
 end # module protobuf
