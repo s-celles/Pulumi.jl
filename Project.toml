@@ -1,0 +1,22 @@
+name = "Pulumi"
+uuid = "90af1f71-c6d8-4a0a-9f87-1292e80e7fff"
+authors = ["Sébastien Celles"]
+version = "0.1.0"
+
+[deps]
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+ProtoBuf = "3349acd9-ac6a-5e09-bcdb-63829b23a429"
+UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
+
+[compat]
+JSON3 = "1"
+ProtoBuf = "1"
+julia = "1.10"
+
+[extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Aqua", "BenchmarkTools", "Test"]

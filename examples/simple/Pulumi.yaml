@@ -1,0 +1,3 @@
+name: simple-julia-example
+runtime: julia
+description: A simple Pulumi Julia SDK example

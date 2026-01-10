@@ -1,0 +1,8 @@
+# Binary output
+pulumi-language-julia
+pulumi-language-julia.exe
+
+# Go build artifacts
+*.o
+*.a
+*.so
