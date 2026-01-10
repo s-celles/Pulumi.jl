@@ -5,6 +5,10 @@
 # Generates Julia code from Pulumi proto files using ProtoBuf.jl's native protojl() function.
 # No external protoc binary required - ProtoBuf.jl v1.0.0+ uses a pure Julia implementation.
 #
+# Proto files are sourced from:
+#   1. Julia Artifact (pulumi_protos) - downloaded automatically
+#   2. Local proto/ directory - for development/testing
+#
 # Usage:
 #   julia --project=. gen/generate_protos.jl
 #
@@ -12,13 +16,45 @@
 #   include("gen/generate_protos.jl")
 
 using ProtoBuf
+using Pkg.Artifacts
+
+"""
+    get_proto_dir()
+
+Get the proto directory path, preferring artifact over local directory.
+Returns the artifact path if available, otherwise falls back to local proto/.
+"""
+function get_proto_dir()
+    repo_root = dirname(@__DIR__)
+    local_proto_dir = joinpath(repo_root, "proto")
+
+    # Try to use artifact first
+    artifacts_toml = joinpath(repo_root, "Artifacts.toml")
+    if isfile(artifacts_toml)
+        try
+            artifact_path = artifact"pulumi_protos"
+            if isdir(artifact_path)
+                return artifact_path, :artifact
+            end
+        catch e
+            # Artifact not available, fall back to local
+        end
+    end
+
+    # Fall back to local proto directory
+    if isdir(local_proto_dir)
+        return local_proto_dir, :local
+    end
+
+    error("Proto files not found. Run: julia --project=. gen/download_protos.jl")
+end
 
 function main()
     # Get repository root (parent of gen/ directory)
     repo_root = dirname(@__DIR__)
 
     # Proto source and output directories
-    proto_dir = joinpath(repo_root, "proto")
+    proto_dir, source = get_proto_dir()
     output_dir = joinpath(repo_root, "src", "grpc", "proto")
 
     # Proto files to compile (relative to proto_dir)
@@ -35,11 +71,6 @@ function main()
         "pulumi/provider.proto",
         "pulumi/codegen/hcl.proto",
     ]
-
-    # Validate proto directory exists
-    if !isdir(proto_dir)
-        error("Proto directory not found: $proto_dir")
-    end
 
     # Validate all proto files exist
     missing_files = filter(f -> !isfile(joinpath(proto_dir, f)), proto_files)
@@ -66,12 +97,14 @@ function main()
     end
 
     # Progress output with platform info
+    source_label = source == :artifact ? "artifact" : "local"
     println("=" ^ 60)
     println("Proto Code Generation")
     println("=" ^ 60)
     println("  Platform:         $(Sys.KERNEL) ($(Sys.MACHINE))")
     println("  Julia version:    $(VERSION)")
     println("  ProtoBuf.jl:      $(pkgversion(ProtoBuf))")
+    println("  Proto source:     $source_label")
     println("  Input directory:  $proto_dir")
     println("  Output directory: $output_dir")
     println("  Proto files:      $(length(proto_files))")

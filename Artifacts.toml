@@ -1,0 +1,14 @@
+# Pulumi.jl Artifacts
+#
+# This file defines artifacts (external dependencies) that are downloaded on demand.
+# See: https://pkgdocs.julialang.org/v1/artifacts/
+
+[pulumi_protos]
+# Proto files from Pulumi v3.140.0
+# Update this when proto files change
+git-tree-sha1 = "c90104a6945c9e4b68315984a83d31d012ee8abc"
+
+    [[pulumi_protos.download]]
+    sha256 = "1f0319eb547b39d72966c59bd47d8ebc624d144553ddd52d4da427432475cc52"
+    # Upload artifact to GitHub releases and update this URL
+    url = "https://github.com/s-celles/Pulumi.jl/releases/download/v0.1.0/pulumi-protos-v3.140.0.tar.gz"

@@ -6,6 +6,8 @@ This guide covers maintaining the Pulumi.jl SDK, with a focus on updating protoc
 
 Pulumi.jl communicates with the Pulumi engine via gRPC, which requires protocol buffer (proto) definitions. When Pulumi releases new versions, these proto files may change, requiring updates to the SDK.
 
+Proto files are distributed as a **Julia Artifact** (defined in `Artifacts.toml`) and are not stored in the repository. This keeps the repo clean and ensures reproducible builds.
+
 ## Proto Update Workflow
 
 ### Quick Update (Latest Version)
@@ -27,9 +29,9 @@ For more control over the update process:
    julia --project=. gen/download_protos.jl
    ```
 
-2. **Review changes**:
+2. **Review downloaded files**:
    ```bash
-   git diff proto/
+   ls -la proto/
    ```
 
 3. **Regenerate Julia bindings**:
@@ -44,7 +46,7 @@ For more control over the update process:
 
 5. **Commit changes**:
    ```bash
-   git add proto/ src/grpc/proto/
+   git add src/grpc/proto/
    git commit -m "chore: update Pulumi proto files to latest"
    ```
 
@@ -60,9 +62,55 @@ julia --project=. gen/download_protos.jl v3.140.0
 julia --project=. gen/download_protos.jl v3.140.0 --generate
 ```
 
+## Artifact Management
+
+Proto files are managed as a Julia Artifact. The artifact is defined in `Artifacts.toml` and downloaded automatically when running `gen/generate_protos.jl`.
+
+### Updating the Artifact
+
+When proto files change significantly (new Pulumi version), update the artifact:
+
+1. **Download new proto files**:
+   ```bash
+   julia --project=. gen/download_protos.jl v3.150.0
+   ```
+
+2. **Create artifact tarball**:
+   ```bash
+   julia --project=. gen/create_proto_artifact.jl v3.150.0
+   ```
+
+3. **Upload tarball to GitHub releases**:
+   - Go to the repository releases page
+   - Create a new release or edit existing
+   - Upload `artifacts/pulumi-protos-v3.150.0.tar.gz`
+
+4. **Update Artifacts.toml** with the output from step 2
+
+5. **Test the artifact**:
+   ```bash
+   # Remove local proto/ to force artifact usage
+   rm -rf proto/
+   julia --project=. gen/generate_protos.jl
+   ```
+
+### Local Development
+
+For development, you can use local proto files instead of the artifact:
+
+```bash
+# Download protos locally
+julia --project=. gen/download_protos.jl
+
+# Generate from local proto/
+julia --project=. gen/generate_protos.jl
+```
+
+The generation script prefers the artifact but falls back to `proto/` if available.
+
 ## Proto File Structure
 
-### Local Directory Layout
+### Downloaded Layout
 
 ```
 proto/
@@ -127,7 +175,22 @@ Generates Julia code from proto files using ProtoBuf.jl.
 julia --project=. gen/generate_protos.jl
 ```
 
-No arguments needed - uses proto files from `proto/` directory.
+Proto source priority:
+1. Julia Artifact (`pulumi_protos` from `Artifacts.toml`)
+2. Local `proto/` directory (fallback)
+
+### `gen/create_proto_artifact.jl`
+
+Creates a tarball artifact from downloaded proto files.
+
+**Usage**:
+```bash
+julia --project=. gen/create_proto_artifact.jl [version]
+```
+
+**Output**:
+- `artifacts/pulumi-protos-<version>.tar.gz`
+- Artifacts.toml entry to copy
 
 ## Troubleshooting
 
@@ -144,6 +207,13 @@ If code generation fails:
 - Ensure proto files are valid (not corrupted)
 - Check that all required proto files are present
 - Verify ProtoBuf.jl is installed (`using ProtoBuf`)
+
+### Artifact Not Found
+
+If the artifact cannot be downloaded:
+- Check network connectivity
+- Verify the URL in `Artifacts.toml` is accessible
+- Fall back to local proto files: `julia --project=. gen/download_protos.jl`
 
 ### Test Failures After Update
 
