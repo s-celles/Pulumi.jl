@@ -97,15 +97,20 @@ using Pkg
 Pkg.test("Pulumi")
 ```
 
-### Regenerating Proto Files
+### Updating Proto Files
 
-When Pulumi releases new protocol versions, regenerate the Julia bindings:
+When Pulumi releases new protocol versions, update the proto files and regenerate Julia bindings:
 
 ```bash
-julia --project=. gen/generate_protos.jl
+# Download latest protos and regenerate code
+julia --project=. gen/download_protos.jl --generate
+
+# Or step-by-step
+julia --project=. gen/download_protos.jl      # Download protos
+julia --project=. gen/generate_protos.jl      # Generate Julia code
 ```
 
-This uses ProtoBuf.jl's native parser (no external protoc required).
+See [docs/src/maintenance.md](./docs/src/maintenance.md) for the complete SDK maintenance guide.
 
 ### Project Structure
 
