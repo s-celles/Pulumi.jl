@@ -143,4 +143,5 @@ Pulumi.jl/
 ## License
 
 This project is released under MIT license - See [LICENSE](./LICENSE) for details.
+
 [Proto](https://protobuf.dev/programming-guides/proto3/) files from Pulumi Corporation are published under Apache License, Version 2.0.
