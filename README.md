@@ -1,3 +1,5 @@
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/s-celles/Pulumi.jl)
+
 # Pulumi.jl
 
 > **Disclaimer**: This is a community-developed Julia SDK for Pulumi. It is **not** an official product of Pulumi Corporation. For official Pulumi language SDKs, see [pulumi.com/docs](https://www.pulumi.com/docs/).
