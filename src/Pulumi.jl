@@ -40,7 +40,9 @@ include("errors.jl")
 include("output.jl")
 include("grpc/retry.jl")
 include("grpc/serialize.jl")
+include("grpc/proto/pulumirpc/pulumirpc.jl")
 include("grpc/client.jl")
+include("grpc/server.jl")
 include("context.jl")
 include("resource.jl")
 include("config.jl")
@@ -73,6 +75,10 @@ export get_int, get_bool, get_float, get_object
 # Error types
 export PulumiError, ResourceError, GRPCError, ConfigMissingError, DependencyError
 
+# gRPC status codes and mappings
+export GRPCStatusCode, GRPCLogSeverity
+export exception_to_grpc_code, is_retryable_grpc_code, log_severity_to_grpc
+
 # Logging
 export log, log_debug, log_info, log_warn, log_error
 
@@ -85,5 +91,17 @@ export add_node!, add_edge!, topological_sort
 export get_dependencies, get_all_dependencies, get_dependents
 export get_dependency_graph, reset_dependency_graph!
 export register_dependency!, register_resource_dependencies!
+
+# LanguageRuntime server
+export JuliaLanguageRuntime, LanguageRuntimeServer
+export create_language_runtime_server
+export start_and_print_port!, run_server, stop_server!
+
+# gRPC clients
+export MonitorClient, EngineClient, GRPCChannel
+export connect!, disconnect!, is_connected
+export register_resource_rpc, register_resource_outputs_rpc
+export invoke_rpc, read_resource_rpc, supports_feature_rpc
+export log_rpc, get_root_resource_rpc
 
 end # module Pulumi

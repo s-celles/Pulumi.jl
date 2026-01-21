@@ -1,16 +1,23 @@
 name = "Pulumi"
 uuid = "90af1f71-c6d8-4a0a-9f87-1292e80e7fff"
-authors = ["Sébastien Celles"]
 version = "0.1.0"
+authors = ["Sébastien Celles"]
 
 [deps]
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 ProtoBuf = "3349acd9-ac6a-5e09-bcdb-63829b23a429"
 UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
+gRPCClient = "aaca4a50-36af-4a1d-b878-4c443f2061ad"
+gRPCServer = "608c6337-0d7d-447f-bb69-0f5674ee3959"
 
 [compat]
+Aqua = "0.8"
+BenchmarkTools = "1"
 JSON3 = "1"
 ProtoBuf = "1"
+Test = "1"
+gRPCClient = "1"
+gRPCServer = "0.1"
 julia = "1.10"
 
 [extras]

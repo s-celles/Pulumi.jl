@@ -113,3 +113,97 @@ function Base.showerror(io::IO, e::DependencyError)
         end
     end
 end
+
+# ============================================================================
+# gRPC Status Codes
+# ============================================================================
+
+"""
+    GRPCStatusCode
+
+gRPC status codes for protocol-level error communication.
+Maps to the standard gRPC status codes.
+"""
+module GRPCStatusCode
+    const OK = 0
+    const CANCELLED = 1
+    const UNKNOWN = 2
+    const INVALID_ARGUMENT = 3
+    const DEADLINE_EXCEEDED = 4
+    const NOT_FOUND = 5
+    const ALREADY_EXISTS = 6
+    const PERMISSION_DENIED = 7
+    const RESOURCE_EXHAUSTED = 8
+    const FAILED_PRECONDITION = 9
+    const ABORTED = 10
+    const OUT_OF_RANGE = 11
+    const UNIMPLEMENTED = 12
+    const INTERNAL = 13
+    const UNAVAILABLE = 14
+    const DATA_LOSS = 15
+    const UNAUTHENTICATED = 16
+end
+
+"""
+    exception_to_grpc_code(e::Exception) -> Int
+
+Map a Julia exception to a gRPC status code.
+"""
+function exception_to_grpc_code(e::Exception)::Int
+    if e isa ArgumentError
+        return GRPCStatusCode.INVALID_ARGUMENT
+    elseif e isa KeyError
+        return GRPCStatusCode.NOT_FOUND
+    elseif e isa MethodError
+        return GRPCStatusCode.UNIMPLEMENTED
+    elseif e isa InterruptException
+        return GRPCStatusCode.CANCELLED
+    elseif e isa OutOfMemoryError
+        return GRPCStatusCode.RESOURCE_EXHAUSTED
+    elseif e isa GRPCError
+        return e.code
+    else
+        return GRPCStatusCode.INTERNAL
+    end
+end
+
+"""
+    is_retryable_grpc_code(code::Int) -> Bool
+
+Check if a gRPC status code indicates a retryable error.
+"""
+function is_retryable_grpc_code(code::Int)::Bool
+    code == GRPCStatusCode.UNAVAILABLE || code == GRPCStatusCode.RESOURCE_EXHAUSTED
+end
+
+"""
+    GRPCLogSeverity
+
+Log severity levels for gRPC Engine Log RPC.
+These match the protobuf LogSeverity enum values.
+"""
+module GRPCLogSeverity
+    const DEBUG = 1
+    const INFO = 2
+    const WARNING = 3
+    const ERROR = 4
+end
+
+"""
+    log_severity_to_grpc(severity::String) -> Int
+
+Convert LogSeverity string to gRPC LogSeverity integer.
+"""
+function log_severity_to_grpc(severity::String)::Int
+    if severity == "debug"
+        return GRPCLogSeverity.DEBUG
+    elseif severity == "info"
+        return GRPCLogSeverity.INFO
+    elseif severity == "warning"
+        return GRPCLogSeverity.WARNING
+    elseif severity == "error"
+        return GRPCLogSeverity.ERROR
+    else
+        return GRPCLogSeverity.INFO  # Default
+    end
+end

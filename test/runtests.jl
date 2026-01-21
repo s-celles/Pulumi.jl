@@ -54,6 +54,8 @@ using Pulumi
         include("contract/register_resource_test.jl")
         include("contract/register_outputs_test.jl")
         include("contract/invoke_test.jl")
+        include("contract/language_runtime_test.jl")
+        include("contract/engine_client_test.jl")
     end
 
     @testset "Integration Tests" begin
@@ -61,6 +63,7 @@ using Pulumi
         include("integration/component_test.jl")
         include("integration/export_test.jl")
         include("integration/conformance_test.jl")
+        include("integration/pulumi_cli_test.jl")
     end
 
     @testset "Benchmarks" begin
