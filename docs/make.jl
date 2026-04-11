@@ -5,7 +5,7 @@ makedocs(
     sitename = "Pulumi.jl",
     format = Documenter.HTML(
         prettyurls = get(ENV, "CI", nothing) == "true",
-        canonical = "https://pulumi.github.io/pulumi-julia/",
+        canonical = "https://s-celles.github.io/Pulumi.jl/",
     ),
     modules = [Pulumi],
     pages = [
@@ -27,7 +27,7 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/pulumi/pulumi-julia.git",
+    repo = "github.com/s-celles/Pulumi.jl.git",
     devbranch = "main",
     push_preview = true,
 )

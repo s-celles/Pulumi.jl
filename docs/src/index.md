@@ -36,7 +36,7 @@ end)
 
 ```julia
 using Pkg
-Pkg.add("Pulumi")
+Pkg.add("Pulumi")  # when Pulumi.jl will be registered in Julia General Registry
 ```
 
 ## Documentation
