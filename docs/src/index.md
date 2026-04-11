@@ -2,6 +2,9 @@
 
 > **Disclaimer**: This is a community-developed Julia SDK for Pulumi. It is **not** an official product of Pulumi Corporation. For official Pulumi language SDKs, see [pulumi.com/docs](https://www.pulumi.com/docs/).
 
+!!! warning "Experimental"
+    This package is in an early experimental stage and is **not ready for production use**. APIs may change without notice. It depends on [gRPCServer.jl](https://github.com/s-celles/gRPCServer.jl), which is also experimental and not yet registered in the Julia General Registry.
+
 Julia SDK for Pulumi Infrastructure as Code.
 
 Pulumi.jl provides Julia developers with native syntax to define, deploy, and manage
@@ -57,6 +60,6 @@ Depth = 2
 
 ## Getting Help
 
-- [GitHub Issues](https://github.com/pulumi/pulumi-julia/issues)
+- [GitHub Issues](https://github.com/s-celles/Pulumi.jl/issues)
 - [Pulumi Community Slack](https://slack.pulumi.com/)
 - [Pulumi Documentation](https://www.pulumi.com/docs/)
