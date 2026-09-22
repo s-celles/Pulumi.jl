@@ -33,8 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   published with the documentation site
 - `justfile` with the main entry points (tests, docs, proto regeneration,
   language host)
-- `upstream-bugs.md` recording the gRPCServer.jl and ProtoBuf.jl limitations
-  Pulumi.jl works around
 - Dependabot configuration, and TagBot and CompatHelper workflows
 - `custom_timeouts` keyword on `register_resource`, accepting any of the
   `"create"`, `"update"` and `"delete"` durations
@@ -44,8 +42,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   serves until the process is asked to stop and returns an exit code
 - Graceful shutdown on `SIGINT` and `SIGTERM`: the server is stopped, the
   clients disconnected and the port released before the process exits
-- `upstream-bugs.md` entry for the Julia hazard where a signal received during
-  JIT compilation wedges the process
 
 ### Fixed
 

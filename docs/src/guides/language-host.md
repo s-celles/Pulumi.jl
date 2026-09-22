@@ -77,8 +77,9 @@ more than once.
 !!! warning
     A signal that arrives while Julia is still JIT-compiling the serving loop —
     the first few seconds after the port is announced — leaves the process
-    wedged, because `atexit` hooks never run. This is a Julia-level hazard
-    rather than something the host can guard against; see `upstream-bugs.md`.
+    wedged: the `atexit` hooks never run and the port is never released. This is
+    a Julia-level hazard rather than something the host can guard against.
+    Shipping the plugin as a sysimage would close that window.
 
 ## Implemented RPCs
 

@@ -348,9 +348,9 @@ end
     # Signal handling itself is not exercised here. Delivering a signal to a
     # Julia process that is still JIT-compiling its serving loop wedges it, so
     # a subprocess test would assert on JIT timing rather than on the shutdown
-    # logic; see upstream-bugs.md. What the host guarantees once it is serving
-    # — a clean stop and a released port on SIGINT and SIGTERM — is verified by
-    # hand with `just plugin-run`.
+    # logic, and was flaky for exactly that reason. What the host guarantees
+    # once it is serving — a clean stop and a released port on SIGINT and
+    # SIGTERM — is verified by hand with `just plugin-run`.
     @testset "run_language_host is the entry point" begin
         @test isdefined(Pulumi, :run_language_host)
 

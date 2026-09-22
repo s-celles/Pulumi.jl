@@ -47,7 +47,7 @@
 
 - [x] **`justfile`** — Main entry points: tests, docs, proto regeneration, language host and plugin build
 - [x] **`LICENSE.md`** — Renamed from `LICENSE`
-- [x] **`upstream-bugs.md`** — Records the gRPCServer.jl ephemeral-port ergonomics and bound-port accessor, and ProtoBuf.jl's missing service generation
+- [x] **Upstream issue log** — Kept as an untracked `upstream-bugs.md` in the working tree: gRPCServer.jl's ephemeral-port ergonomics and missing bound-port accessor, ProtoBuf.jl's missing service generation, and the Julia signal-during-JIT hazard
 - [ ] **BestieTemplate.jl alignment** — Compare the repository layout against BestieTemplate.jl and adopt the missing conventions
 
 ### Documentation
@@ -76,7 +76,7 @@
 - [ ] **`pulumi new` template** — Provide a `julia` project template for bootstrapping new Pulumi Julia projects
 - [ ] **End-to-end integration tests** — Test full lifecycle (up/preview/destroy) against a real provider (e.g., `pulumi-docker` or `pulumi-random`)
 - [x] **Graceful shutdown** — `run_language_host` stops the server, disconnects the clients and releases the port on SIGINT and SIGTERM, and reports a failure to the engine before exiting (NFR-012)
-- [ ] **Signal handling under load** — A signal received while Julia is still JIT-compiling the serving loop wedges the process; a plugin sysimage would close that window (see `upstream-bugs.md`)
+- [ ] **Signal handling under load** — A signal received while Julia is still JIT-compiling the serving loop wedges the process: `atexit` never runs and the port is never released. A plugin sysimage would close that window
 - [ ] **Preview mode** — Properly propagate unknown values through Outputs during `pulumi preview` (FR-025)
 - [ ] **State management** — Ensure resource state is correctly maintained across up/destroy cycles (NFR-013)
 - [ ] **Error propagation** — Surface provider errors with full context and actionable messages (NFR-011, NFR-033)
