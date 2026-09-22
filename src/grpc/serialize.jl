@@ -6,7 +6,7 @@ Per constitution's gRPC Protocol Fidelity principle:
 - Proper secret encoding with signature markers
 """
 
-using JSON3
+using JSON
 
 # Secret signature marker per Pulumi spec
 const SECRET_SIG = "4dabf18193072939515e22adb298388d"

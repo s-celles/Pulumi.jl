@@ -229,7 +229,7 @@ Get a configuration value as a JSON object.
 """
 function get_object(config::Config, key::String)::Union{Dict{String, Any}, Nothing}
     value = get(config, key)
-    value === nothing ? nothing : JSON3.read(value, Dict{String, Any})
+    value === nothing ? nothing : JSON.parse(value, Dict{String, Any})
 end
 
 """

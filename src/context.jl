@@ -7,7 +7,7 @@ Per data-model.md:
 - Singleton per program execution
 """
 
-using JSON3
+using JSON
 
 """
     Context
@@ -68,7 +68,7 @@ function Context()
     # Parse configuration
     config_json = get(ENV, "PULUMI_CONFIG", "{}")
     config = try
-        JSON3.read(config_json, Dict{String, Any})
+        JSON.parse(config_json, Dict{String, Any})
     catch
         Dict{String, Any}()
     end
@@ -76,7 +76,7 @@ function Context()
     # Parse secret keys
     secret_keys_json = get(ENV, "PULUMI_CONFIG_SECRET_KEYS", "[]")
     secret_keys = try
-        Set{String}(JSON3.read(secret_keys_json, Vector{String}))
+        Set{String}(JSON.parse(secret_keys_json, Vector{String}))
     catch
         Set{String}()
     end
