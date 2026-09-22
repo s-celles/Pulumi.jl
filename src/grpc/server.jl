@@ -12,6 +12,8 @@ using gRPCServer
 import gRPCServer: service_descriptor, ServiceDescriptor, MethodDescriptor, MethodType
 import gRPCServer: ServerContext, ServerStream, GRPCServer
 
+import TOML
+
 # Import ProtoBuf for message encoding/decoding
 import ProtoBuf as PB
 
@@ -50,9 +52,11 @@ end
 
 Wrapper around GRPCServer that manages the LanguageRuntime service lifecycle.
 """
-struct LanguageRuntimeServer
+mutable struct LanguageRuntimeServer
     server::GRPCServer
     service::JuliaLanguageRuntime
+    # Requested port; replaced by the port actually bound once the server is
+    # started, which matters when port 0 was requested (ephemeral port).
     port::Int
 end
 
@@ -131,8 +135,9 @@ function handle_run(runtime::JuliaLanguageRuntime, ctx::ServerContext, req::RunR
             reset_context!()
 
             # Set environment variables for Context creation
-            ENV["PULUMI_PROJECT"] = runtime.project_name
-            ENV["PULUMI_STACK"] = runtime.stack_name
+            ENV["PULUMI_PROJECT"] = req.project
+            ENV["PULUMI_STACK"] = req.stack
+            ENV["PULUMI_ORGANIZATION"] = req.organization
             ENV["PULUMI_MONITOR"] = req.monitor_address
             ENV["PULUMI_ENGINE"] = runtime.engine_address
             ENV["PULUMI_DRY_RUN"] = req.dryRun ? "true" : "false"
@@ -225,10 +230,126 @@ function handle_get_required_plugins(runtime::JuliaLanguageRuntime, ctx::ServerC
 end
 
 """
+    resolve_program_directory(runtime, req) -> String
+
+Determine the directory holding the Pulumi program's `Project.toml`.
+
+The Pulumi CLI reports the location in several ways depending on the RPC, so
+the first non-empty of the request's `ProgramInfo`, the request's own
+directory fields and the directory captured during `Handshake` wins.
+"""
+function resolve_program_directory(runtime::JuliaLanguageRuntime, candidates::AbstractVector{<:AbstractString})
+    for candidate in candidates
+        isempty(candidate) || return String(candidate)
+    end
+    isempty(runtime.program_directory) || return runtime.program_directory
+    return pwd()
+end
+
+"""
+    manifest_versions(manifest_file) -> Dict{String, String}
+
+Read the resolved package versions from a `Manifest.toml`.
+
+Returns an empty dictionary when the manifest is absent or unreadable, so a
+program that has not been instantiated yet still reports its dependencies.
+"""
+function manifest_versions(manifest_file::AbstractString)
+    versions = Dict{String, String}()
+    isfile(manifest_file) || return versions
+
+    manifest = try
+        TOML.parsefile(manifest_file)
+    catch
+        return versions
+    end
+
+    # Manifest format 2.0 nests the packages under `deps`; format 1.0 lists
+    # them at the top level.
+    entries = get(manifest, "deps", manifest)
+    entries isa AbstractDict || return versions
+
+    for (name, records) in entries
+        records isa AbstractVector || continue
+        for record in records
+            record isa AbstractDict || continue
+            haskey(record, "version") || continue
+            versions[name] = string(record["version"])
+            break
+        end
+    end
+
+    return versions
+end
+
+"""
+    project_dependencies(directory) -> Vector{DependencyInfo}
+
+List the direct dependencies declared by the `Project.toml` in `directory`.
+
+Versions are reported from the resolved `Manifest.toml` when one exists and
+fall back to the `[compat]` bounds otherwise. An absent or malformed
+`Project.toml` yields an empty list rather than an error: the Pulumi CLI uses
+this RPC for reporting, and a failure here must not abort a deployment.
+"""
+function project_dependencies(directory::AbstractString)
+    dependencies = DependencyInfo[]
+
+    project_file = joinpath(directory, "Project.toml")
+    isfile(project_file) || return dependencies
+
+    project = try
+        TOML.parsefile(project_file)
+    catch
+        return dependencies
+    end
+
+    deps = get(project, "deps", nothing)
+    deps isa AbstractDict || return dependencies
+
+    compat = get(project, "compat", Dict{String, Any}())
+    versions = manifest_versions(joinpath(directory, "Manifest.toml"))
+
+    for name in sort!(collect(keys(deps)))
+        version = get(versions, name, "")
+        if isempty(version) && compat isa AbstractDict
+            version = string(get(compat, name, ""))
+        end
+        push!(dependencies, DependencyInfo(name, version))
+    end
+
+    return dependencies
+end
+
+"""
+    pump_pipe(pipe, sink) -> Nothing
+
+Forward everything written to `pipe` to `sink`, one chunk at a time, until the
+pipe is exhausted.
+"""
+function pump_pipe(pipe::IO, sink)
+    try
+        while !eof(pipe)
+            chunk = readavailable(pipe)
+            isempty(chunk) || sink(Vector{UInt8}(chunk))
+        end
+    catch
+        # The pipe is closed while the process tears down; there is nothing
+        # left to forward.
+    finally
+        close(pipe)
+    end
+    return nothing
+end
+
+"""
     handle_install_dependencies(runtime, ctx, req, stream) -> Nothing
 
 Handle the InstallDependencies RPC - installs Julia package dependencies.
-This is a streaming RPC that sends stdout/stderr as responses.
+
+Runs `Pkg.instantiate()` for the program's environment in a separate Julia
+process, so the language host's own environment is left untouched, and streams
+the subprocess output back to the CLI as it is produced.
 """
 function handle_install_dependencies(
     runtime::JuliaLanguageRuntime,
@@ -236,32 +357,63 @@ function handle_install_dependencies(
     req::InstallDependenciesRequest,
     stream::ServerStream{InstallDependenciesResponse}
 )
+    # The pipes are drained by two concurrent tasks, so sending must be
+    # serialized.
+    send_lock = ReentrantLock()
+    emit = function (bytes::Vector{UInt8}, is_stderr::Bool)
+        isempty(bytes) && return nothing
+        response = is_stderr ?
+            InstallDependenciesResponse(UInt8[], bytes) :
+            InstallDependenciesResponse(bytes, UInt8[])
+        lock(send_lock) do
+            gRPCServer.send!(stream, response)
+        end
+        return nothing
+    end
+
     try
-        directory = !isempty(req.directory) ? req.directory : runtime.program_directory
+        info_directory = req.info !== nothing ? req.info.program_directory : ""
+        directory = resolve_program_directory(runtime, [req.directory, info_directory])
 
-        # Run Pkg.instantiate in the project directory
-        cd(directory) do
-            # Capture output
-            stdout_content = "Installing Julia dependencies...\n"
-            gRPCServer.send!(stream, InstallDependenciesResponse(
-                Vector{UInt8}(stdout_content),
-                UInt8[]
-            ))
+        if !isdir(directory)
+            throw(ArgumentError("Program directory not found: $directory"))
+        end
 
-            # TODO: Actually run Pkg.instantiate() and capture output
-            # For now, just send a completion message
-            stdout_content = "Dependencies installed successfully.\n"
-            gRPCServer.send!(stream, InstallDependenciesResponse(
-                Vector{UInt8}(stdout_content),
-                UInt8[]
-            ))
+        emit(Vector{UInt8}("Installing Julia dependencies in $directory\n"), false)
+
+        script = "using Pkg; Pkg.instantiate()"
+        # `JULIA_LOAD_PATH` is pinned so the subprocess sees the program's
+        # environment plus the standard library, whatever load path the host
+        # happens to run under (`Pkg.test`, for instance, restricts it and
+        # would leave `Pkg` itself unreachable).
+        command = addenv(
+            `$(Base.julia_cmd()) --project=$directory --startup-file=no --color=no -e $script`,
+            "JULIA_LOAD_PATH" => "@:@stdlib",
+            "JULIA_PROJECT" => nothing,
+        )
+
+        stdout_pipe = Pipe()
+        stderr_pipe = Pipe()
+        process = run(pipeline(command; stdout = stdout_pipe, stderr = stderr_pipe); wait = false)
+        close(stdout_pipe.in)
+        close(stderr_pipe.in)
+
+        # Drain both pipes concurrently so a chatty subprocess cannot fill a
+        # pipe buffer and deadlock.
+        stdout_pump = @async pump_pipe(stdout_pipe, chunk -> emit(chunk, false))
+        stderr_pump = @async pump_pipe(stderr_pipe, chunk -> emit(chunk, true))
+
+        wait(process)
+        wait(stdout_pump)
+        wait(stderr_pump)
+
+        if success(process)
+            emit(Vector{UInt8}("Dependencies installed successfully.\n"), false)
+        else
+            emit(Vector{UInt8}("Pkg.instantiate() failed with exit code $(process.exitcode).\n"), true)
         end
     catch e
-        error_msg = sprint(showerror, e)
-        gRPCServer.send!(stream, InstallDependenciesResponse(
-            UInt8[],
-            Vector{UInt8}(error_msg)
-        ))
+        emit(Vector{UInt8}(sprint(showerror, e) * "\n"), true)
     end
 
     return nothing
@@ -271,16 +423,16 @@ end
     handle_get_program_dependencies(runtime, ctx, req) -> GetProgramDependenciesResponse
 
 Handle the GetProgramDependencies RPC - returns program dependencies.
+
+Reports the direct dependencies declared in the program's `Project.toml`.
+Transitive dependencies are not reported yet, so `req.transitiveDependencies`
+is currently ignored.
 """
 function handle_get_program_dependencies(runtime::JuliaLanguageRuntime, ctx::ServerContext, req::GetProgramDependenciesRequest)
-    dependencies = DependencyInfo[]
+    info_directory = req.info !== nothing ? req.info.program_directory : ""
+    directory = resolve_program_directory(runtime, [info_directory, req.pwd])
 
-    # Always include Pulumi.jl
-    push!(dependencies, DependencyInfo("Pulumi", "0.1.0"))
-
-    # TODO: Parse Project.toml for actual dependencies
-
-    return GetProgramDependenciesResponse(dependencies)
+    return GetProgramDependenciesResponse(project_dependencies(directory))
 end
 
 """
@@ -362,8 +514,10 @@ function gRPCServer.service_descriptor(runtime::JuliaLanguageRuntime)
                 RuntimeOptionsResponse,
                 (ctx, req) -> handle_runtime_options(runtime, ctx, req)
             )
-        ),
-        runtime  # Closure context
+        )
+        # The handlers above already close over `runtime`; the descriptor's
+        # third argument is the reflection file descriptor, which Pulumi.jl
+        # does not publish.
     )
 end
 
@@ -384,7 +538,12 @@ Create a new LanguageRuntime gRPC server.
 - `LanguageRuntimeServer` instance ready to be started
 """
 function create_language_runtime_server(host::String="127.0.0.1", port::Int=0)
-    server = GRPCServer(host, port)
+    # GRPCServer rejects port 0 at construction, so an ephemeral port is
+    # requested by building the server with a placeholder and lowering the
+    # port to 0 before `start!` binds it.
+    server = port == 0 ? GRPCServer(host, 1) : GRPCServer(host, port)
+    server.port = port
+
     runtime = JuliaLanguageRuntime()
     gRPCServer.register!(server, runtime)
 
@@ -395,19 +554,18 @@ end
     start_and_print_port!(server::LanguageRuntimeServer)
 
 Start the server and print the assigned port to stdout.
-This is the Pulumi plugin discovery protocol.
+This is the Pulumi plugin discovery protocol: the CLI launches the plugin and
+reads the port to connect to from the first line of its stdout.
+
+Returns the port that was actually bound, which is the kernel-assigned port
+when the server was created with `port = 0`.
 """
 function start_and_print_port!(server::LanguageRuntimeServer)
     gRPCServer.start!(server.server)
 
-    # Get the actual port (important when port=0 for auto-assign)
-    # Note: gRPCServer should provide a way to get the bound port
-    # For now, assume it's stored or accessible
-    actual_port = server.port
-    if actual_port == 0
-        # TODO: Get actual bound port from server
-        actual_port = 50051  # Placeholder
-    end
+    # With port 0 the real port is only known once the backend is listening.
+    actual_port = Int(gRPCServer.HTTP.port(server.server))
+    server.port = actual_port
 
     # Print port to stdout for Pulumi CLI discovery
     println(actual_port)
