@@ -36,6 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `upstream-bugs.md` recording the gRPCServer.jl and ProtoBuf.jl limitations
   Pulumi.jl works around
 - Dependabot configuration, and TagBot and CompatHelper workflows
+- `custom_timeouts` keyword on `register_resource`, accepting any of the
+  `"create"`, `"update"` and `"delete"` durations
+- Resource option documentation in the Resources guide, covering `aliases`,
+  `custom_timeouts`, `parent`, `provider` and `version`
 
 ### Fixed
 
@@ -56,6 +60,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its `Project.toml` and resolved `Manifest.toml`, instead of a hard-coded entry
 - Duplicate docstring on the `Output` constructors, which emitted a
   "Replacing docs" warning at precompilation
+- `aliases` are sent as `pulumirpc.Alias` messages; they were passed as plain
+  strings into a field typed `Vector{Alias}` and so never reached the engine
+- `custom_timeouts` are sent in the RegisterResource request; the option was
+  accepted by `ResourceOptions` but the field was always `nothing` on the wire
+- `deleteBeforeReplaceDefined` is set alongside `deleteBeforeReplace`; without
+  it the engine ignores the option entirely
 
 ### Changed
 

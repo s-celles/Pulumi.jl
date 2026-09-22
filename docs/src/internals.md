@@ -58,6 +58,8 @@ Pulumi.unwrap_secret
 ```@docs
 Pulumi._parse_address
 Pulumi._build_register_resource_request
+Pulumi._build_aliases
+Pulumi._build_custom_timeouts
 Pulumi.with_retry
 Pulumi.is_retryable_code
 Pulumi.with_log_stream

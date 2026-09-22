@@ -46,6 +46,10 @@ using Pulumi
         include("type_stability_test.jl")
     end
 
+    @testset "Resource Options" begin
+        include("resource_options_test.jl")
+    end
+
     @testset "Server" begin
         include("server_test.jl")
     end

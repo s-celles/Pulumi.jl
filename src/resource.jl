@@ -205,6 +205,7 @@ Register a cloud resource with the Pulumi engine.
 - `ignore_changes`: Properties to ignore on update
 - `delete_before_replace`: Delete before creating replacement
 - `retain_on_delete`: Keep resource when removed from code
+- `custom_timeouts`: Per-operation timeouts, e.g. `Dict("create" => "10m")`
 
 # Returns
 - `CustomResource`: The registered resource with outputs
@@ -228,6 +229,7 @@ function register_resource(
     ignore_changes::Vector{String} = String[],
     delete_before_replace::Bool = false,
     retain_on_delete::Bool = false,
+    custom_timeouts::Union{Dict{String, String}, Nothing} = nothing,
     version::Union{String, Nothing} = nothing
 )::CustomResource
     options = ResourceOptions(;
@@ -239,6 +241,7 @@ function register_resource(
         ignore_changes,
         delete_before_replace,
         retain_on_delete,
+        custom_timeouts,
         version
     )
 
@@ -270,7 +273,8 @@ function register_resource(
         "aliases" => aliases,
         "acceptSecrets" => true,
         "acceptResources" => true,
-        "retainOnDelete" => retain_on_delete
+        "retainOnDelete" => retain_on_delete,
+        "customTimeouts" => custom_timeouts
     )
 
     if version !== nothing

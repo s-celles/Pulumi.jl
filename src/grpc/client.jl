@@ -237,6 +237,49 @@ function register_resource_rpc(client::MonitorClient, request::Dict)::Dict
 end
 
 """
+    _build_aliases(value) -> Vector{pulumirpc.Alias}
+
+Convert the `aliases` entry of a request into `Alias` messages.
+
+Pulumi.jl exposes aliases as plain URN strings, which the protobuf request
+carries as an `Alias` oneof. Already-built `Alias` messages are passed through,
+so a caller can supply the richer `Alias.Spec` form.
+"""
+function _build_aliases(value)::Vector{pulumirpc.Alias}
+    value === nothing && return pulumirpc.Alias[]
+
+    aliases = pulumirpc.Alias[]
+    for alias in value
+        if alias isa pulumirpc.Alias
+            push!(aliases, alias)
+        else
+            push!(aliases, pulumirpc.Alias(OneOf(:urn, string(alias))))
+        end
+    end
+    return aliases
+end
+
+"""
+    _build_custom_timeouts(value) -> Union{Nothing, RegisterResourceRequest.CustomTimeouts}
+
+Convert the `customTimeouts` entry of a request into its protobuf message.
+
+Accepts a `Dict` with any of the `"create"`, `"update"` and `"delete"` keys;
+omitted keys are sent empty, which the engine reads as "use the provider's
+default". `nothing` leaves the field unset.
+"""
+function _build_custom_timeouts(value)
+    value === nothing && return nothing
+    value isa pulumirpc.var"RegisterResourceRequest.CustomTimeouts" && return value
+
+    return pulumirpc.var"RegisterResourceRequest.CustomTimeouts"(
+        string(get(value, "create", "")),
+        string(get(value, "update", "")),
+        string(get(value, "delete", "")),
+    )
+end
+
+"""
     _build_register_resource_request(request::Dict) -> RegisterResourceRequest
 
 Build a RegisterResourceRequest protobuf message from a Dict.
@@ -251,6 +294,10 @@ function _build_register_resource_request(request::Dict)::RegisterResourceReques
     protect_val = get(request, "protect", false)
     dependencies_val = get(request, "dependencies", String[])
     provider_val = get(request, "provider", "")
+
+    # The engine ignores `deleteBeforeReplace` unless `deleteBeforeReplaceDefined`
+    # marks it as explicitly set, so the two travel together.
+    delete_before_replace = get(request, "deleteBeforeReplace", false)
 
     # Convert property dependencies
     prop_deps_raw = get(request, "propertyDependencies", Dict{String, Any}())
@@ -271,15 +318,15 @@ function _build_register_resource_request(request::Dict)::RegisterResourceReques
         dependencies_val,                                   # dependencies
         provider_val,                                       # provider
         prop_deps,                                          # propertyDependencies
-        get(request, "deleteBeforeReplace", false),         # deleteBeforeReplace
+        delete_before_replace,                              # deleteBeforeReplace
         get(request, "version", ""),                        # version
         get(request, "ignoreChanges", String[]),            # ignoreChanges
         get(request, "acceptSecrets", true),                # acceptSecrets
         get(request, "additionalSecretOutputs", String[]),  # additionalSecretOutputs
         String[],                                           # aliasURNs (deprecated)
         get(request, "importId", ""),                       # importId
-        nothing,                                            # customTimeouts
-        false,                                              # deleteBeforeReplaceDefined
+        _build_custom_timeouts(get(request, "customTimeouts", nothing)), # customTimeouts
+        delete_before_replace,                              # deleteBeforeReplaceDefined
         true,                                               # supportsPartialValues
         false,                                              # remote
         get(request, "acceptResources", true),              # acceptResources
@@ -288,7 +335,7 @@ function _build_register_resource_request(request::Dict)::RegisterResourceReques
         "",                                                 # pluginDownloadURL
         Dict{String, Vector{UInt8}}(),                      # pluginChecksums
         get(request, "retainOnDelete", false),              # retainOnDelete
-        get(request, "aliases", pulumirpc.Alias[]),         # aliases
+        _build_aliases(get(request, "aliases", nothing)),   # aliases
         get(request, "deletedWith", ""),                    # deletedWith
         String[],                                           # replace_with
         nothing,                                            # replacement_trigger

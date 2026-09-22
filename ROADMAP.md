@@ -86,8 +86,9 @@
 
 **Goal**: Full resource options support and production-grade reliability.
 
-The options below are already sent in the RegisterResource request
-(`src/resource.jl`, `src/grpc/client.jl`); what remains for each is an
+Every option below is sent in the RegisterResource request
+(`src/resource.jl`, `src/grpc/client.jl`) and its wire representation is
+covered by `test/resource_options_test.jl`. What remains for each is an
 end-to-end test against a real provider, which depends on 0.2.0.
 
 - [x] **`parent` option** — Establish resource hierarchy, propagate to URN (FR-030)
@@ -97,9 +98,9 @@ end-to-end test against a real provider, which depends on 0.2.0.
 - [x] **`ignore_changes` option** — Skip specific property updates (FR-035)
 - [x] **`delete_before_replace`** — Delete old resource before creating replacement (FR-036)
 - [x] **`retain_on_delete`** — Remove from state without deleting (FR-037)
-- [ ] **`aliases` option** — Support resource renaming/refactoring (FR-034). Currently sent as `Vector{String}` where the request expects `pulumirpc.Alias`, so it never reaches the engine (`src/grpc/client.jl`)
-- [ ] **`custom_timeouts`** — Per-resource operation timeouts. Accepted by `ResourceOptions` but always sent as `nothing` (`src/grpc/client.jl`)
-- [ ] **Resource option tests** — Assert each option's wire representation, none is covered today
+- [x] **`aliases` option** — Support resource renaming/refactoring; URN strings are converted to `pulumirpc.Alias` messages (FR-034)
+- [x] **`custom_timeouts`** — Per-resource operation timeouts, exposed as a `register_resource` keyword and sent in the request
+- [x] **Resource option tests** — `test/resource_options_test.jl` asserts each option's wire representation, including the `deleteBeforeReplaceDefined` companion flag
 - [ ] **Cross-platform testing** — Validate on macOS and Windows in CI (NFR-022)
 - [ ] **Performance benchmarks** — Verify 1000+ resources without memory exhaustion (NFR-001), serialization <10ms (NFR-003), startup <2s (NFR-004)
 - [ ] **80% test coverage** — Comprehensive unit + integration tests (NFR-040)

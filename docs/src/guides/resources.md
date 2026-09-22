@@ -27,11 +27,42 @@ Control resource behavior with keyword arguments:
 
 ```julia
 bucket = register_resource("aws:s3:Bucket", "my-bucket", Dict{String,Any}(),
+    parent = my_component,             # Place under a parent in the hierarchy
+    provider = eu_provider,            # Use an explicit provider
     protect = true,                    # Prevent accidental deletion
     depends_on = [other_resource],     # Explicit dependencies
     ignore_changes = ["tags"],         # Ignore certain property changes
     delete_before_replace = true,      # Delete before creating replacement
-    retain_on_delete = false           # Keep resource when removed from code
+    retain_on_delete = false,          # Keep resource when removed from code
+    aliases = [old_urn],               # Previous URNs, for refactoring
+    custom_timeouts = Dict(            # Per-operation timeouts
+        "create" => "30m",
+        "update" => "10m",
+        "delete" => "1h",
+    ),
+    version = "6.0.0"                  # Pin the provider plugin version
+)
+```
+
+#### Aliases
+
+`aliases` takes the URNs a resource was previously known by, so renaming or
+re-parenting it does not destroy and recreate it:
+
+```julia
+bucket = register_resource("aws:s3:Bucket", "assets", Dict{String,Any}(),
+    aliases = ["urn:pulumi:dev::my-project::aws:s3:Bucket::my-bucket"]
+)
+```
+
+#### Custom timeouts
+
+`custom_timeouts` accepts any of the `"create"`, `"update"` and `"delete"` keys,
+as Go-style duration strings. Omitted operations keep the provider's default:
+
+```julia
+cluster = register_resource("aws:eks:Cluster", "main", Dict{String,Any}(),
+    custom_timeouts = Dict("create" => "30m")
 )
 ```
 
