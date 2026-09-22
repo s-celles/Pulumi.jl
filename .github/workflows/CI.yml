@@ -33,7 +33,7 @@ jobs:
       - uses: julia-actions/cache@v2
       - name: Clone unregistered dependencies
         run: |
-          git clone --branch develop https://github.com/s-celles/gRPCServer.jl /tmp/gRPCServer.jl
+          git clone https://github.com/s-celles/gRPCServer.jl /tmp/gRPCServer.jl
       - name: Install and build
         run: |
           julia --project=. -e '
