@@ -31,7 +31,7 @@ cloud infrastructure using the Pulumi platform.
 module Pulumi
 
 using UUIDs
-using JSON3
+using JSON
 
 # Include submodules in dependency order
 include("enums/log_severity.jl")

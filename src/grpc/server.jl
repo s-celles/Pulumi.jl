@@ -140,14 +140,14 @@ function handle_run(runtime::JuliaLanguageRuntime, ctx::ServerContext, req::RunR
 
             # Set config as JSON if provided
             if req.config !== nothing && !isempty(req.config)
-                ENV["PULUMI_CONFIG"] = JSON3.write(req.config)
+                ENV["PULUMI_CONFIG"] = JSON.json(req.config)
             else
                 ENV["PULUMI_CONFIG"] = "{}"
             end
 
             # Set secret keys if provided
             if req.configSecretKeys !== nothing && !isempty(req.configSecretKeys)
-                ENV["PULUMI_CONFIG_SECRET_KEYS"] = JSON3.write(req.configSecretKeys)
+                ENV["PULUMI_CONFIG_SECRET_KEYS"] = JSON.json(req.configSecretKeys)
             else
                 ENV["PULUMI_CONFIG_SECRET_KEYS"] = "[]"
             end
