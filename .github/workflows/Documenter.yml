@@ -20,17 +20,11 @@ jobs:
         with:
           version: '1'
       - uses: julia-actions/cache@v2
-      - name: Clone unregistered dependencies
-        run: |
-          git clone https://github.com/s-celles/gRPCServer.jl /tmp/gRPCServer.jl
       - name: Install dependencies
         run: |
           julia --project=docs -e '
             using Pkg
-            Pkg.develop([
-              PackageSpec(path="/tmp/gRPCServer.jl"),
-              PackageSpec(path=pwd()),
-            ])
+            Pkg.develop(PackageSpec(path=pwd()))
             Pkg.instantiate()'
       - name: Build and deploy
         env:

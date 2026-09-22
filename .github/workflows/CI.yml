@@ -31,14 +31,10 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v2
-      - name: Clone unregistered dependencies
-        run: |
-          git clone https://github.com/s-celles/gRPCServer.jl /tmp/gRPCServer.jl
       - name: Install and build
         run: |
           julia --project=. -e '
             using Pkg
-            Pkg.develop(PackageSpec(path="/tmp/gRPCServer.jl"))
             Pkg.instantiate()
             Pkg.build()'
       - name: Run tests
