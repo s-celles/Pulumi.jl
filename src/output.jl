@@ -71,8 +71,10 @@ end
 
 """
     Output{T}(value::T; is_secret=false, dependencies=[])
+    Output(value::T; is_secret=false, dependencies=[])
 
-Create a known Output with a resolved value.
+Create a known Output with a resolved value. The second form infers `T` from
+`value`.
 """
 function Output{T}(
     value::T;
@@ -94,11 +96,9 @@ function Output{T}(;
     Output{T}(string(uuid4()), Unknown(), is_secret, false, dependencies)
 end
 
-"""
-    Output(value::T; kwargs...)
-
-Create an Output with type inferred from value.
-"""
+# Documented together with `Output{T}(value::T; ...)` above: Julia binds both
+# constructor docstrings to the same signature, so a second docstring here
+# would silently replace that one.
 function Output(value::T; kwargs...) where T
     Output{T}(value; kwargs...)
 end

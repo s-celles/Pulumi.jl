@@ -1,5 +1,13 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+Pulumi = "90af1f71-c6d8-4a0a-9f87-1292e80e7fff"
+gRPCServer = "608c6337-0d7d-447f-bb69-0f5674ee3959"
+
+# Resolve Pulumi.jl from this checkout rather than the registry, without the
+# absolute path that `Pkg.develop` would record.
+[sources]
+Pulumi = {path = ".."}
 
 [compat]
 Documenter = "1"
+gRPCServer = "0.1"

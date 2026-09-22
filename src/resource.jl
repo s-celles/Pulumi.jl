@@ -158,8 +158,30 @@ mutable struct ProviderResource <: Resource
 end
 
 # Convenience accessors
+
+"""
+    get_urn(resource::Resource) -> String
+
+Get the Pulumi URN that identifies `resource` in the stack's state.
+
+The URN is empty until the resource has been registered with the engine.
+"""
 get_urn(r::Resource) = r.urn
+
+"""
+    get_name(resource::Resource) -> String
+
+Get the logical name `resource` was declared with.
+"""
 get_name(r::Resource) = r.name
+
+"""
+    get_type(resource::Resource) -> String
+
+Get the Pulumi type token of `resource`, such as `"aws:s3/bucket:Bucket"`.
+
+For a [`ProviderResource`](@ref) this is the provider's package name.
+"""
 get_type(r::CustomResource) = r.type_
 get_type(r::ComponentResource) = r.type_
 get_type(r::ProviderResource) = r.package
