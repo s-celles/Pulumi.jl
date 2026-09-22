@@ -96,6 +96,7 @@ export register_dependency!, register_resource_dependencies!
 export JuliaLanguageRuntime, LanguageRuntimeServer
 export create_language_runtime_server
 export start_and_print_port!, run_server, stop_server!
+export run_language_host
 
 # gRPC clients
 export MonitorClient, EngineClient, GRPCChannel

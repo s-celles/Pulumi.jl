@@ -2,9 +2,9 @@
 #
 # pulumi-language-julia - Pulumi Language Runtime for Julia
 #
-# This is the entry point that the Pulumi CLI spawns when executing Julia programs.
-# It starts a gRPC server implementing the LanguageRuntime service and prints
-# the assigned port to stdout for the CLI to connect.
+# This is the entry point that the Pulumi CLI spawns when executing Julia
+# programs. It starts a gRPC server implementing the LanguageRuntime service
+# and prints the assigned port to stdout for the CLI to connect.
 #
 # Usage:
 #   pulumi-language-julia
@@ -14,6 +14,8 @@
 #   2. Read the port number from stdout
 #   3. Connect via gRPC and call Handshake, Run, etc.
 #
+# The process serves until it receives SIGINT or SIGTERM, then shuts the
+# server down cleanly. See `Pulumi.run_language_host`.
 
 # Ensure we're using the local Pulumi package if in development
 if isfile(joinpath(@__DIR__, "..", "..", "Project.toml"))
@@ -22,28 +24,7 @@ end
 
 using Pulumi
 
-function main()
-    # Create the LanguageRuntime gRPC server
-    # Port 0 means auto-assign an available port
-    server = Pulumi.create_language_runtime_server("127.0.0.1", 0)
-
-    # Start server and print port to stdout (Pulumi CLI protocol)
-    port = Pulumi.start_and_print_port!(server)
-
-    # Run server until shutdown (blocking)
-    try
-        Pulumi.run_server(server)
-    catch e
-        if !(e isa InterruptException)
-            @error "Server error" exception=(e, catch_backtrace())
-            exit(1)
-        end
-    finally
-        Pulumi.stop_server!(server)
-    end
-end
-
 # Run main if this script is executed directly
 if abspath(PROGRAM_FILE) == @__FILE__
-    main()
+    exit(run_language_host())
 end

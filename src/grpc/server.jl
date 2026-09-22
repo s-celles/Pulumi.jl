@@ -601,6 +601,79 @@ function stop_server!(server::LanguageRuntimeServer)
         # Ignore cleanup errors
     end
 
-    # Stop the gRPC server
-    gRPCServer.stop!(server.server)
+    # Stop the gRPC server. Stopping a server that was never started, or
+    # stopping twice, is a no-op: shutdown can be reached from the normal path
+    # and from the atexit hook installed by `run_language_host`.
+    try
+        gRPCServer.stop!(server.server)
+    catch e
+        e isa gRPCServer.InvalidServerStateError || rethrow()
+    end
+
+    return nothing
+end
+
+"""
+    run_language_host(; host="127.0.0.1", port=0) -> Int
+
+Run the Pulumi language host until it is asked to shut down, and return the
+process exit code.
+
+This is what `bin/pulumi-language-julia` executes. It starts the
+`LanguageRuntime` server, announces the bound port on stdout as the Pulumi
+plugin protocol requires, and serves until the process is interrupted.
+
+Neither `SIGINT` (Ctrl-C) nor `SIGTERM` unwinds the stack in a way the server
+loop can catch reliably, but Julia runs `atexit` hooks for both, so shutdown is
+installed there. The hook is idempotent, so the normal return path can stop the
+server too without stopping it twice.
+
+A failure is logged to the engine, when one is connected, before returning a
+non-zero exit code.
+"""
+function run_language_host(; host::String = "127.0.0.1", port::Int = 0)::Int
+    server = create_language_runtime_server(host, port)
+
+    stopped = Ref(false)
+    shutdown_lock = ReentrantLock()
+    shutdown = function ()
+        lock(shutdown_lock) do
+            stopped[] && return nothing
+            stopped[] = true
+            try
+                stop_server!(server)
+            catch e
+                @debug "Error while stopping the language host" exception = e
+            end
+            return nothing
+        end
+    end
+
+    atexit(shutdown)
+
+    start_and_print_port!(server)
+
+    status = 0
+    try
+        run_server(server)
+    catch e
+        if e isa InterruptException
+            # A requested shutdown, not a failure.
+        else
+            status = 1
+            # Reporting must not itself throw: a signal can arrive while the
+            # failure is being logged.
+            try
+                @error "Language host failed" exception = (e, catch_backtrace())
+                # Best effort: the engine is only reachable once Handshake ran.
+                log_error("Julia language host failed: " * sprint(showerror, e))
+            catch
+                # No engine connected, or the process is already going down.
+            end
+        end
+    finally
+        shutdown()
+    end
+
+    return status
 end

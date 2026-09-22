@@ -35,7 +35,7 @@
 - [x] **GetProgramDependencies handler** — Reads `[deps]` from the program's `Project.toml`, with versions from the resolved `Manifest.toml` or the `[compat]` bounds
 - [x] **Server port binding** — `port = 0` binds an ephemeral port and `start_and_print_port!` announces the port actually bound
 - [ ] **Test coverage** — Fill in the remaining integration test placeholders (component_test.jl, conformance_test.jl, pulumi_cli_test.jl); the language host lifecycle and its handlers are covered by `test/server_test.jl`
-- [ ] **Aqua.jl clean** — Resolve any remaining code quality warnings
+- [x] **Aqua.jl clean** — `Aqua.test_all` runs with every check enabled (ambiguities, stale deps, piracies, compat bounds)
 
 ---
 
@@ -75,7 +75,8 @@
 - [ ] **Plugin discovery** — Register Julia as a Pulumi language plugin so `pulumi new` and `runtime: julia` in `Pulumi.yaml` work
 - [ ] **`pulumi new` template** — Provide a `julia` project template for bootstrapping new Pulumi Julia projects
 - [ ] **End-to-end integration tests** — Test full lifecycle (up/preview/destroy) against a real provider (e.g., `pulumi-docker` or `pulumi-random`)
-- [ ] **Graceful shutdown** — Handle SIGINT/SIGTERM properly, report errors to engine before exit (NFR-012)
+- [x] **Graceful shutdown** — `run_language_host` stops the server, disconnects the clients and releases the port on SIGINT and SIGTERM, and reports a failure to the engine before exiting (NFR-012)
+- [ ] **Signal handling under load** — A signal received while Julia is still JIT-compiling the serving loop wedges the process; a plugin sysimage would close that window (see `upstream-bugs.md`)
 - [ ] **Preview mode** — Properly propagate unknown values through Outputs during `pulumi preview` (FR-025)
 - [ ] **State management** — Ensure resource state is correctly maintained across up/destroy cycles (NFR-013)
 - [ ] **Error propagation** — Surface provider errors with full context and actionable messages (NFR-011, NFR-033)

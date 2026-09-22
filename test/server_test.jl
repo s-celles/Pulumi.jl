@@ -330,3 +330,33 @@ end
         @test occursin("not initialized", response.error)
     end
 end
+
+@testset "Graceful shutdown" begin
+    @testset "stop_server! is idempotent" begin
+        server = create_language_runtime_server("127.0.0.1", 0)
+
+        # Never started: stopping is a no-op rather than an error.
+        @test stop_server!(server) === nothing
+
+        capture_stdout() do
+            start_and_print_port!(server)
+        end
+        @test stop_server!(server) === nothing
+        @test stop_server!(server) === nothing
+    end
+
+    # Signal handling itself is not exercised here. Delivering a signal to a
+    # Julia process that is still JIT-compiling its serving loop wedges it, so
+    # a subprocess test would assert on JIT timing rather than on the shutdown
+    # logic; see upstream-bugs.md. What the host guarantees once it is serving
+    # — a clean stop and a released port on SIGINT and SIGTERM — is verified by
+    # hand with `just plugin-run`.
+    @testset "run_language_host is the entry point" begin
+        @test isdefined(Pulumi, :run_language_host)
+
+        # The entry point script must call it rather than re-implement the
+        # lifecycle, so the atexit-based shutdown always applies.
+        script = read(joinpath(dirname(@__DIR__), "src", "bin", "pulumi-language-julia"), String)
+        @test occursin("run_language_host()", script)
+    end
+end

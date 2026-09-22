@@ -40,6 +40,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `"create"`, `"update"` and `"delete"` durations
 - Resource option documentation in the Resources guide, covering `aliases`,
   `custom_timeouts`, `parent`, `provider` and `version`
+- `run_language_host`, the language host entry point: it announces its port,
+  serves until the process is asked to stop and returns an exit code
+- Graceful shutdown on `SIGINT` and `SIGTERM`: the server is stopped, the
+  clients disconnected and the port released before the process exits
+- `upstream-bugs.md` entry for the Julia hazard where a signal received during
+  JIT compilation wedges the process
 
 ### Fixed
 
@@ -66,11 +72,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   accepted by `ResourceOptions` but the field was always `nothing` on the wire
 - `deleteBeforeReplaceDefined` is set alongside `deleteBeforeReplace`; without
   it the engine ignores the option entirely
+- `stop_server!` is idempotent and no longer raises on a server that was never
+  started
 
 ### Changed
 
 - The documentation build no longer allows `missing_docs` and `docs_block`
   warnings; every documented symbol is now referenced from the manual
+- All Aqua.jl checks are enabled; ambiguities, stale dependencies, type piracy
+  and compat bounds were previously skipped and now pass
 - `docs/Project.toml` resolves Pulumi.jl through a relative `[sources]` entry,
   so installing the documentation environment no longer records an absolute path
 

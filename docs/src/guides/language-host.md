@@ -14,16 +14,24 @@ Pulumi.jl itself.
 ```julia
 using Pulumi
 
+exit(run_language_host())
+```
+
+[`run_language_host`](@ref) creates the server, announces its port, serves until
+the process is asked to stop and returns the process exit code. The repository
+ships exactly that as an executable script:
+
+```bash
+julia --project=. src/bin/pulumi-language-julia
+```
+
+The individual steps are available when you need finer control:
+
+```julia
 server = create_language_runtime_server("127.0.0.1", 0)
 port = start_and_print_port!(server)   # prints the port on stdout
 run_server(server)                     # blocks until shutdown
 stop_server!(server)
-```
-
-The repository ships this as an executable script:
-
-```bash
-julia --project=. src/bin/pulumi-language-julia
 ```
 
 ### Port discovery
@@ -49,6 +57,28 @@ client such as `grpcurl` to a known address.
     Anything else the host writes to standard output would be parsed as the
     port, so a Pulumi program should log through [`log_info`](@ref) and friends
     rather than `println`.
+
+### Shutdown
+
+The host stops cleanly on both `SIGINT` (Ctrl-C) and `SIGTERM`, which is what a
+supervisor or the Pulumi CLI sends when a deployment is cancelled. In both
+cases the gRPC server is stopped, the resource monitor and engine clients are
+disconnected and the port is released before the process exits, with the
+conventional `130` and `143` exit codes.
+
+Neither signal unwinds the stack in a way the serving loop can catch reliably,
+so [`run_language_host`](@ref) installs the shutdown as an `atexit` hook, which
+Julia runs for both. The hook is idempotent, so returning normally from
+`run_server` shuts the server down exactly once as well.
+
+[`stop_server!`](@ref) is safe to call on a server that was never started, or
+more than once.
+
+!!! warning
+    A signal that arrives while Julia is still JIT-compiling the serving loop —
+    the first few seconds after the port is announced — leaves the process
+    wedged, because `atexit` hooks never run. This is a Julia-level hazard
+    rather than something the host can guard against; see `upstream-bugs.md`.
 
 ## Implemented RPCs
 

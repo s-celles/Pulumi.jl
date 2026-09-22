@@ -133,6 +133,7 @@ The language host the Pulumi CLI launches to execute a Julia program.
 JuliaLanguageRuntime
 LanguageRuntimeServer
 create_language_runtime_server
+run_language_host
 start_and_print_port!
 run_server
 stop_server!
