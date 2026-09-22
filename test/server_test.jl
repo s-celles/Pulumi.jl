@@ -267,44 +267,53 @@ end
         )
 
         try
-            mktempdir() do dir
-                program = joinpath(dir, "main.jl")
-                write(program, "# empty Pulumi program\n")
+            # Running a program needs a live resource monitor: the host
+            # registers the root stack resource before the program runs.
+            with_fake_engine() do engine
+                mktempdir() do dir
+                    program = joinpath(dir, "main.jl")
+                    write(program, "# empty Pulumi program\n")
 
-                runtime = JuliaLanguageRuntime()
-                runtime.initialized = true
-                runtime.program_directory = dir
+                    runtime = JuliaLanguageRuntime()
+                    runtime.initialized = true
+                    runtime.program_directory = dir
+                    runtime.engine_address = engine.address
 
-                ctx = Pulumi.ServerContext(method = "Run")
-                request = Pulumi.RunRequest(
-                    "my-project",           # project
-                    "my-stack",             # stack
-                    dir,                    # pwd
-                    "main.jl",              # program
-                    String[],               # args
-                    Dict{String,String}(),  # config
-                    true,                   # dryRun
-                    Int32(4),               # parallel
-                    "",                     # monitor_address
-                    false,                  # queryMode
-                    String[],               # configSecretKeys
-                    "my-org",               # organization
-                    nothing,                # configPropertyMap
-                    nothing,                # info
-                    "",                     # loader_target
-                    false,                  # attach_debugger
-                )
+                    ctx = Pulumi.ServerContext(method = "Run")
+                    request = Pulumi.RunRequest(
+                        "my-project",           # project
+                        "my-stack",             # stack
+                        dir,                    # pwd
+                        "main.jl",              # program
+                        String[],               # args
+                        Dict{String,String}(),  # config
+                        true,                   # dryRun
+                        Int32(4),               # parallel
+                        engine.address,         # monitor_address
+                        false,                  # queryMode
+                        String[],               # configSecretKeys
+                        "my-org",               # organization
+                        nothing,                # configPropertyMap
+                        nothing,                # info
+                        "",                     # loader_target
+                        false,                  # attach_debugger
+                    )
 
-                response = Pulumi.handle_run(runtime, ctx, request)
+                    response = Pulumi.handle_run(runtime, ctx, request)
 
-                @test response.error == ""
-                # The request fields, not non-existent runtime fields, drive the
-                # environment the program observes.
-                @test ENV["PULUMI_PROJECT"] == "my-project"
-                @test ENV["PULUMI_STACK"] == "my-stack"
-                @test ENV["PULUMI_ORGANIZATION"] == "my-org"
-                @test ENV["PULUMI_DRY_RUN"] == "true"
-                @test ENV["PULUMI_PARALLEL"] == "4"
+                    @test response.error == ""
+
+                    # The root stack resource is registered for the program.
+                    @test Base.any(r -> r.var"#type" == "pulumi:pulumi:Stack",
+                                   engine.registrations)
+                    # The request fields, not non-existent runtime fields, drive the
+                    # environment the program observes.
+                    @test ENV["PULUMI_PROJECT"] == "my-project"
+                    @test ENV["PULUMI_STACK"] == "my-stack"
+                    @test ENV["PULUMI_ORGANIZATION"] == "my-org"
+                    @test ENV["PULUMI_DRY_RUN"] == "true"
+                    @test ENV["PULUMI_PARALLEL"] == "4"
+                end
             end
         finally
             Pulumi.reset_context!()

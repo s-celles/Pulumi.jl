@@ -11,6 +11,9 @@ Per data-model.md:
 const _STACK_OUTPUTS = Dict{String, Any}()
 const _STACK_OUTPUT_LOCK = ReentrantLock()
 
+# URN of the root `pulumi:pulumi:Stack` resource, once registered.
+const _ROOT_STACK_URN = Ref("")
+
 """
     export_value(name::String, value::Any)
 
@@ -96,14 +99,66 @@ function clear_exports!()
 end
 
 """
+    register_root_stack() -> String
+
+Register the stack's root `pulumi:pulumi:Stack` resource and return its URN.
+
+Every Pulumi language SDK registers this resource itself; the engine does not
+create it. It is what stack outputs are attached to, and what the engine uses
+as the default parent for the program's resources. The URN is remembered for
+the rest of the program, so calling this again is cheap and does not register a
+duplicate.
+"""
+function register_root_stack()::String
+    isempty(_ROOT_STACK_URN[]) || return _ROOT_STACK_URN[]
+
+    ctx = get_context()
+    response = register_resource_rpc(ctx._monitor, Dict{String, Any}(
+        "type" => "pulumi:pulumi:Stack",
+        "name" => "$(ctx.project)-$(ctx.stack)",
+        "parent" => "",
+        "custom" => false,
+        "object" => Dict{String, Any}(),
+        "acceptSecrets" => true,
+        "acceptResources" => true,
+    ))
+
+    _ROOT_STACK_URN[] = get(response, "urn", "")
+    return _ROOT_STACK_URN[]
+end
+
+"""
+    root_stack_urn() -> String
+
+The URN of the root stack resource, or an empty string if it has not been
+registered yet.
+"""
+root_stack_urn()::String = _ROOT_STACK_URN[]
+
+"""
+    clear_root_stack!()
+
+Forget the registered root stack resource. Used when resetting the context
+between programs.
+"""
+function clear_root_stack!()
+    _ROOT_STACK_URN[] = ""
+    return nothing
+end
+
+"""
     register_stack_outputs()
 
-Register all accumulated stack outputs with the engine.
-Called automatically at program end.
+Publish the exported values as the stack's outputs.
+
+They are attached to the root `pulumi:pulumi:Stack` resource, which is
+registered on demand by [`register_root_stack`](@ref). Nothing is sent when the
+program exported nothing.
+
+[`run_program`](@ref) calls this once the program has finished; a program only
+needs to call it directly when it drives the lifecycle itself.
 """
 function register_stack_outputs()
-    ctx = get_context()
-
     outputs = get_exports()
     if isempty(outputs)
         return
@@ -115,17 +170,16 @@ function register_stack_outputs()
         serialized[name] = serialize_property(value)
     end
 
-    # Get root resource URN from engine
-    root_urn = get_root_resource_rpc(ctx._engine)
-
-    if !isempty(root_urn)
-        request = Dict{String, Any}(
-            "urn" => root_urn,
-            "outputs" => serialized
-        )
-
-        register_resource_outputs_rpc(ctx._monitor, request)
+    urn = register_root_stack()
+    if isempty(urn)
+        throw(PulumiError("Cannot publish stack outputs: the root stack resource has no URN"))
     end
+
+    register_resource_outputs_rpc(get_context()._monitor, Dict{String, Any}(
+        "urn" => urn,
+        "outputs" => serialized,
+    ))
+    return nothing
 end
 
 """
@@ -148,4 +202,39 @@ macro export_output(expr)
     quote
         export_value($name, $(esc(value)))
     end
+end
+
+"""
+    run_program(path::AbstractString)
+
+Execute a Pulumi program and publish the values it exported.
+
+The Pulumi CLI never registers stack outputs on a program's behalf, so this is
+what turns [`export_value`](@ref) and [`export_secret`](@ref) calls into the
+stack outputs `pulumi stack output` reports. Every language host must run a
+program through this function rather than `include` it directly.
+
+The program is evaluated in `Main`, so the names it defines do not leak into
+`Pulumi`, and the program's directory becomes the working directory while it
+runs.
+
+Outputs are published only when the program completes: a program that throws
+leaves the stack's previous outputs untouched.
+"""
+function run_program(path::AbstractString)
+    program = abspath(path)
+    if !isfile(program)
+        throw(ArgumentError("Pulumi program not found: $program"))
+    end
+
+    # The root stack resource must exist before the program registers anything,
+    # because the engine parents the program's resources to it.
+    register_root_stack()
+
+    cd(dirname(program)) do
+        Base.include(Main, program)
+    end
+
+    register_stack_outputs()
+    return nothing
 end

@@ -64,6 +64,7 @@ export register_resources_parallel, with_parallelism
 export apply, all
 export invoke, call
 export export_value, export_secret, get_exports, clear_exports!
+export run_program
 export get_stack, get_project, get_organization, is_dry_run
 export get_context, set_context!, reset_context!
 export get_urn, get_name, get_type

@@ -132,11 +132,13 @@ func (host *juliaLanguageHost) Run(
 		}, nil
 	}
 
-	// Build the Julia command
+	// Build the Julia command. The program is run through
+	// Pulumi.run_program rather than a bare include(), so the values it
+	// exports are registered as stack outputs when it completes.
 	args := []string{
 		"--project=.",
 		"-e",
-		fmt.Sprintf(`include("%s")`, filepath.Base(mainFile)),
+		fmt.Sprintf(`using Pulumi; Pulumi.run_program("%s")`, filepath.Base(mainFile)),
 	}
 
 	cmd := exec.CommandContext(ctx, "julia", args...)

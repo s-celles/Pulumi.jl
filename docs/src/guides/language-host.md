@@ -81,12 +81,47 @@ more than once.
     a Julia-level hazard rather than something the host can guard against.
     Shipping the plugin as a sysimage would close that window.
 
+## Installing the plugin
+
+The Pulumi CLI discovers a language plugin as an executable named
+`pulumi-language-<runtime>` on `PATH`. Build the Go host and put it somewhere on
+your `PATH`:
+
+```bash
+just plugin-build
+export PATH="$PWD/bin/pulumi-language-julia:$PATH"
+```
+
+A project then selects it through `Pulumi.yaml`:
+
+```yaml
+name: my-project
+runtime: julia
+```
+
+and the program lives in `main.jl` next to a `Project.toml` that depends on
+Pulumi.jl. `pulumi preview`, `pulumi up` and `pulumi destroy` then work as they
+do for any other language.
+
+## Running a program
+
+A program must be executed through [`run_program`](@ref), never `include`d
+directly. `run_program` registers the stack's root `pulumi:pulumi:Stack`
+resource before the program runs — the engine parents the program's resources
+to it — and publishes the exported values as stack outputs once the program
+finishes. A program that is merely `include`d registers its resources but
+reports no outputs at all, and `pulumi stack output` comes back empty.
+
+Both hosts do this: the Go host invokes
+`julia --project=. -e 'using Pulumi; Pulumi.run_program("main.jl")'`, and the
+Julia host's `Run` handler calls the same function.
+
 ## Implemented RPCs
 
 | RPC | Behaviour |
 |-----|-----------|
 | `Handshake` | Stores the engine address and the root/program directories |
-| `Run` | Executes the program and returns its error, if any |
+| `Run` | Runs the program through `run_program` and returns its error, if any |
 | `GetPluginInfo` | Reports the Pulumi.jl version |
 | `About` | Reports the Julia executable, version and platform |
 | `GetRequiredPlugins` | Returns an empty list; providers are discovered at runtime |

@@ -42,6 +42,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   serves until the process is asked to stop and returns an exit code
 - Graceful shutdown on `SIGINT` and `SIGTERM`: the server is stopped, the
   clients disconnected and the port released before the process exits
+- `run_program`, which runs a Pulumi program, registers the stack's root
+  resource and publishes the values it exported as stack outputs
+- `register_root_stack`, which registers the `pulumi:pulumi:Stack` resource the
+  engine parents a program's resources to
+- An in-process fake Pulumi engine for the test suite, so the component and
+  stack-export integration tests exercise the real gRPC client stack
 
 ### Fixed
 
@@ -70,6 +76,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   it the engine ignores the option entirely
 - `stop_server!` is idempotent and no longer raises on a server that was never
   started
+- Secrets are sent with the signature the engine expects. The envelope carried
+  `"1"` where Pulumi requires `"1b47061264138c4ac30d75fd1eb44270"`, so any
+  program exporting a secret failed the deployment with
+  `unrecognized signature '1' in property map`
+- Stack outputs are published at all. `register_stack_outputs` looked the stack
+  up with `GetRootResource`, which a real engine answers with an empty URN, so
+  it silently published nothing and `pulumi stack output` was always empty
+- Other special values, such as resource references, are no longer mistaken for
+  secrets: they share the envelope key and are told apart by the signature
+- A program is evaluated in `Main` instead of inside the `Pulumi` module, so the
+  names it defines no longer leak into the package
 
 ### Changed
 

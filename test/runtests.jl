@@ -1,6 +1,9 @@
 using Test
 using Pulumi
 
+# Shared test helper: an in-process stand-in for the Pulumi engine.
+include("fake_engine.jl")
+
 @testset "Pulumi.jl" begin
     @testset "Enums" begin
         include("enums_test.jl")
@@ -44,6 +47,10 @@ using Pulumi
 
     @testset "Type Stability" begin
         include("type_stability_test.jl")
+    end
+
+    @testset "Secret Envelope" begin
+        include("secret_envelope_test.jl")
     end
 
     @testset "Resource Options" begin

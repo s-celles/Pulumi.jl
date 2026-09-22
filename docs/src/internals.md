@@ -74,6 +74,14 @@ Pulumi.find_cycle_path
 Pulumi.can_reach
 ```
 
+## Stack Lifecycle
+
+```@docs
+Pulumi.register_root_stack
+Pulumi.root_stack_urn
+Pulumi.clear_root_stack!
+```
+
 ## Context Internals
 
 ```@docs

@@ -8,8 +8,12 @@ Per constitution's gRPC Protocol Fidelity principle:
 
 using JSON
 
-# Secret signature marker per Pulumi spec
-const SECRET_SIG = "4dabf18193072939515e22adb298388d"
+# Pulumi marks a special value with a single reserved key whose value says
+# which kind of special value it is. The engine rejects the whole property map
+# with "unrecognized signature" if the marker is anything else, so these are
+# the exact constants from the Pulumi protocol.
+const SIG_KEY = "4dabf18193072939515e22adb298388d"
+const SECRET_SIG = "1b47061264138c4ac30d75fd1eb44270"
 const RESOURCE_SIG = "5cf8f73096256a8f31e491e813e4eb8e"
 const OUTPUT_SIG = "d0e6a833031e9bbcd3f4e8bde6ca49a4"
 
@@ -77,7 +81,7 @@ function serialize_output(output::Output)
     if output.is_secret
         # Wrap in secret envelope
         return Dict{String, Any}(
-            SECRET_SIG => "1",
+            SIG_KEY => SECRET_SIG,
             "value" => output.is_known ? serialize_property(output.value) : nothing
         )
     elseif output.is_known
@@ -140,7 +144,7 @@ Detects and unwraps secret envelopes.
 """
 function deserialize_struct(d::Dict)::Dict{String, Any}
     # Check for secret envelope
-    if haskey(d, SECRET_SIG)
+    if get(d, SIG_KEY, nothing) == SECRET_SIG
         # This is a secret - the actual value is in "value" key
         inner = get(d, "value", nothing)
         return Dict{String, Any}("__secret" => true, "value" => deserialize_property(inner))
@@ -175,10 +179,14 @@ end
 """
     is_secret_value(d::Dict) -> Bool
 
-Check if a deserialized dict represents a secret value.
+Check if a dict is a secret, either still in its wire envelope or already
+deserialized.
+
+Other special values — resource references, output values — share the envelope
+key with a different signature, so the signature itself is what is compared.
 """
 function is_secret_value(d::Dict)::Bool
-    haskey(d, SECRET_SIG) || get(d, "__secret", false)
+    get(d, SIG_KEY, nothing) == SECRET_SIG || get(d, "__secret", false) == true
 end
 
 """
@@ -187,9 +195,7 @@ end
 Unwrap a secret envelope to get the actual value.
 """
 function unwrap_secret(d::Dict)
-    if haskey(d, SECRET_SIG)
-        return get(d, "value", nothing)
-    elseif haskey(d, "__secret")
+    if get(d, SIG_KEY, nothing) == SECRET_SIG || get(d, "__secret", false) == true
         return get(d, "value", nothing)
     else
         return d

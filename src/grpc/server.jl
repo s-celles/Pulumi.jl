@@ -164,12 +164,8 @@ function handle_run(runtime::JuliaLanguageRuntime, ctx::ServerContext, req::RunR
             @warn "Failed to set up execution context" exception=e
         end
 
-        # 7. Execute the program
-        # Note: Using include() executes in the current module scope
-        # A more robust approach would use a sandbox module
-        cd(pwd) do
-            include(program_path)
-        end
+        # 7. Execute the program and publish whatever it exported
+        run_program(program_path)
 
         # 8. Cleanup gRPC clients
         try

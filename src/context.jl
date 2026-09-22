@@ -141,6 +141,7 @@ function reset_context!()
         disconnect!(ctx._monitor)
         disconnect!(ctx._engine)
         _CONTEXT[] = nothing
+        clear_root_stack!()
     end
 end
 

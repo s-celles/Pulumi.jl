@@ -34,7 +34,7 @@
 - [x] **InstallDependencies handler** — Runs `Pkg.instantiate()` for the program's environment in a separate process and streams its output to the CLI
 - [x] **GetProgramDependencies handler** — Reads `[deps]` from the program's `Project.toml`, with versions from the resolved `Manifest.toml` or the `[compat]` bounds
 - [x] **Server port binding** — `port = 0` binds an ephemeral port and `start_and_print_port!` announces the port actually bound
-- [ ] **Test coverage** — Fill in the remaining integration test placeholders (component_test.jl, conformance_test.jl, pulumi_cli_test.jl); the language host lifecycle and its handlers are covered by `test/server_test.jl`
+- [ ] **Test coverage** — `component_test.jl` and `export_test.jl` now run against an in-process fake engine (`test/fake_engine.jl`); `conformance_test.jl` and `pulumi_cli_test.jl` are still placeholders
 - [x] **Aqua.jl clean** — `Aqua.test_all` runs with every check enabled (ambiguities, stale deps, piracies, compat bounds)
 
 ---
@@ -71,14 +71,17 @@
 
 **Goal**: Make `pulumi up` / `pulumi preview` / `pulumi destroy` work end-to-end with real providers.
 
-- [ ] **`pulumi-language-julia` plugin binary** — Make the CLI discover and launch a host. A Go host (`bin/pulumi-language-julia/main.go`) and a Julia entry point (`src/bin/pulumi-language-julia`) both exist and the Julia one now announces its port correctly; neither is installed as a discoverable plugin yet (IR-003, IR-004)
-- [ ] **Plugin discovery** — Register Julia as a Pulumi language plugin so `pulumi new` and `runtime: julia` in `Pulumi.yaml` work
+- [x] **`pulumi-language-julia` plugin binary** — The Go host (`bin/pulumi-language-julia/main.go`) builds with `just plugin-build` and the Pulumi CLI drives it (IR-003, IR-004)
+- [x] **Plugin discovery** — `runtime: julia` works once `pulumi-language-julia` is on `PATH`, verified against Pulumi CLI 3.215.0
+- [ ] **Plugin installation** — Publish the host so it installs into `~/.pulumi/plugins` instead of having to be placed on `PATH` by hand
 - [ ] **`pulumi new` template** — Provide a `julia` project template for bootstrapping new Pulumi Julia projects
-- [ ] **End-to-end integration tests** — Test full lifecycle (up/preview/destroy) against a real provider (e.g., `pulumi-docker` or `pulumi-random`)
+- [x] **End-to-end lifecycle** — `pulumi preview` and `pulumi up` run a Julia program against a local backend: resources are created, and stack outputs, including secrets, are published and masked. Verified by hand with Pulumi CLI 3.215.0
+- [ ] **End-to-end integration tests** — Automate that lifecycle in CI, and extend it to a real provider (e.g. `pulumi-random`), which needs a provider plugin download
 - [x] **Graceful shutdown** — `run_language_host` stops the server, disconnects the clients and releases the port on SIGINT and SIGTERM, and reports a failure to the engine before exiting (NFR-012)
 - [ ] **Signal handling under load** — A signal received while Julia is still JIT-compiling the serving loop wedges the process: `atexit` never runs and the port is never released. A plugin sysimage would close that window
 - [ ] **Preview mode** — Properly propagate unknown values through Outputs during `pulumi preview` (FR-025)
 - [ ] **State management** — Ensure resource state is correctly maintained across up/destroy cycles (NFR-013)
+- [ ] **Regenerate the protobuf bindings** — The generated code is from ProtoBuf.jl 1.2.0 and the current version warns that it is deprecated on every run
 - [ ] **Error propagation** — Surface provider errors with full context and actionable messages (NFR-011, NFR-033)
 
 ---

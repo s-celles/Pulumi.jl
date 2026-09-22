@@ -173,6 +173,7 @@ log_severity_to_grpc
 ## Stack Outputs
 
 ```@docs
+run_program
 Pulumi.register_stack_outputs
 ```
 
