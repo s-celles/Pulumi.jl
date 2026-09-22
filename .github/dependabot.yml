@@ -1,0 +1,25 @@
+version: 2
+updates:
+  # Keep the actions used by the CI and documentation workflows up to date.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # The Pulumi language host plugin is a Go module.
+  - package-ecosystem: "gomod"
+    directory: "/bin/pulumi-language-julia"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "go"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
