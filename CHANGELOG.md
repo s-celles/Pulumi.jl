@@ -53,6 +53,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A CLI-driven integration test covering `pulumi preview`, `up`, `stack output`
   and `destroy` against a temporary file backend, behind `PULUMI_TEST_INTEGRATION`
 - A CI job that builds and installs the language host and runs that test
+- Formatter, linter and editor configuration following BestieTemplate.jl:
+  `.JuliaFormatter.toml`, `.editorconfig`, `.markdownlint.json`, `.yamllint.yml`,
+  `.yamlfmt.yml`, `.codecov.yml`, `.pre-commit-config.yaml`, `CITATION.cff` and
+  `.vscode/extensions.json`
 - `examples/local`, a complete project that deploys without a cloud account,
   with a README covering the whole cycle
 - `Project.toml` and a README for `examples/simple`, which had neither
@@ -98,6 +102,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Test-only dependencies move from the root `[extras]`/`[targets]` pair into
+  `test/Project.toml`, the layout BestieTemplate.jl generates
 - The test suite is written as TestItemRunner test items. Each one runs in its
   own module and can be run on its own from an editor or with
   `just test-item <pattern>`; shared setup lives in the `TestSupport` test

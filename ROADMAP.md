@@ -48,7 +48,8 @@
 - [x] **`justfile`** — Main entry points: tests, docs, proto regeneration, language host and plugin build
 - [x] **`LICENSE.md`** — Renamed from `LICENSE`
 - [x] **Upstream issue log** — Kept as an untracked `upstream-bugs.md` in the working tree: gRPCServer.jl's ephemeral-port ergonomics and missing bound-port accessor, ProtoBuf.jl's missing service generation, and the Julia signal-during-JIT hazard
-- [ ] **BestieTemplate.jl alignment** — Compare the repository layout against BestieTemplate.jl and adopt the missing conventions
+- [x] **BestieTemplate.jl alignment** — Adopted its conventions: `test/Project.toml` instead of `[extras]`/`[targets]`, the TestItemRunner testing strategy, and its formatter, linter, editor, codecov, pre-commit and citation configuration
+- [ ] **Copier-managed template** — Adopt BestieTemplate through `copier` itself (`.copier-answers.yml`) so template updates can be pulled in, rather than the files having been copied once
 
 ### Documentation
 
