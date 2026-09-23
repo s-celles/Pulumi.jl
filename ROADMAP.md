@@ -78,7 +78,8 @@
 - [ ] **`pulumi new` template** — Provide a `julia` project template for bootstrapping new Pulumi Julia projects
 - [x] **End-to-end lifecycle** — `pulumi preview` and `pulumi up` run a Julia program against a local backend: resources are created, and stack outputs, including secrets, are published and masked. Verified by hand with Pulumi CLI 3.215.0
 - [x] **End-to-end integration tests** — `test/integration/pulumi_cli_test.jl` runs the lifecycle and checks the outputs, including secret masking
-- [ ] **End-to-end tests in CI** — Run them on GitHub Actions, and extend them to a real provider (e.g. `pulumi-random`), which needs a provider plugin download
+- [x] **End-to-end tests in CI** — The `integration` job in `CI.yml` builds and installs the language host and runs the lifecycle test
+- [ ] **A real provider end to end** — Extend the lifecycle test to a provider such as `pulumi-random`, which needs a provider plugin download
 - [x] **Graceful shutdown** — `run_language_host` stops the server, disconnects the clients and releases the port on SIGINT and SIGTERM, and reports a failure to the engine before exiting (NFR-012)
 - [ ] **Signal handling under load** — A signal received while Julia is still JIT-compiling the serving loop wedges the process: `atexit` never runs and the port is never released. A plugin sysimage would close that window
 - [ ] **Preview mode** — Properly propagate unknown values through Outputs during `pulumi preview` (FR-025)

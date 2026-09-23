@@ -42,3 +42,38 @@ jobs:
           julia --project=. -e '
             using Pkg
             Pkg.test()'
+
+  integration:
+    name: End-to-end with the Pulumi CLI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1'
+      - uses: julia-actions/cache@v2
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+          cache-dependency-path: bin/pulumi-language-julia/go.sum
+      - uses: pulumi/actions@v6
+
+      - name: Install dependencies
+        run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
+
+      # Mirrors the `plugin-install` recipe in the justfile.
+      - name: Build and install the language host
+        run: |
+          set -euo pipefail
+          go build -C bin/pulumi-language-julia .
+          version=$(julia --project=. -e 'using TOML; print(TOML.parsefile("Project.toml")["version"])')
+          dest="$HOME/.pulumi/plugins/language-julia-v${version}"
+          mkdir -p "$dest"
+          cp bin/pulumi-language-julia/pulumi-language-julia "$dest/"
+          printf 'resource: false\nname: julia\nversion: %s\n' "$version" > "$dest/PulumiPlugin.yaml"
+          pulumi plugin ls
+
+      - name: Run the integration tests
+        env:
+          PULUMI_TEST_INTEGRATION: 'true'
+        run: julia --project=. -e 'using Pkg; Pkg.test()'

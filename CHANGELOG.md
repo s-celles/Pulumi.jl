@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `~/.pulumi/plugins` so the Pulumi CLI finds it without a `PATH` entry
 - A CLI-driven integration test covering `pulumi preview`, `up`, `stack output`
   and `destroy` against a temporary file backend, behind `PULUMI_TEST_INTEGRATION`
+- A CI job that builds and installs the language host and runs that test
 
 ### Fixed
 
