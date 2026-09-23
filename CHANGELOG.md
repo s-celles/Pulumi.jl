@@ -53,6 +53,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A CLI-driven integration test covering `pulumi preview`, `up`, `stack output`
   and `destroy` against a temporary file backend, behind `PULUMI_TEST_INTEGRATION`
 - A CI job that builds and installs the language host and runs that test
+- `examples/local`, a complete project that deploys without a cloud account,
+  with a README covering the whole cycle
+- `Project.toml` and a README for `examples/simple`, which had neither
 
 ### Fixed
 
@@ -100,6 +103,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   warning in the Pulumi CLI's diagnostics
 - `gen/generate_protos.jl` strips the duplicate `include` lines ProtoBuf.jl
   emits, which otherwise define the same `encode`/`decode` methods twice
+- The Quick Start no longer tells you to run `pulumi new julia`, which has no
+  template behind it; it shows the files to create and how to install the
+  language host
 - The tests that needed a resource monitor now run against the fake engine
   instead of being skipped: they pointed at hard-coded ports where nothing
   listened, so enabling `PULUMI_TEST_INTEGRATION` used to fail outright. The

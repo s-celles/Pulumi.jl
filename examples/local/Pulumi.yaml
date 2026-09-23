@@ -1,0 +1,7 @@
+name: julia-local-example
+runtime: julia
+description: A Pulumi Julia program that runs without any cloud account
+config:
+  julia-local-example:environment:
+    type: string
+    default: dev

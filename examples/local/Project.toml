@@ -1,0 +1,11 @@
+name = "JuliaLocalExample"
+uuid = "9b5a0f4c-7a3d-4a1e-9a7a-5f2c8f1d6e30"
+version = "0.1.0"
+
+[deps]
+Pulumi = "90af1f71-c6d8-4a0a-9f87-1292e80e7fff"
+
+# While Pulumi.jl is unregistered, resolve it from this checkout. Replace this
+# with a `[compat]` bound once the package is in the General registry.
+[sources]
+Pulumi = {path = "../.."}

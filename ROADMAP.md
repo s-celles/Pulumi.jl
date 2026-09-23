@@ -75,7 +75,7 @@
 - [x] **Plugin discovery** — `runtime: julia` works once `pulumi-language-julia` is on `PATH`, verified against Pulumi CLI 3.215.0
 - [x] **Plugin installation** — `just plugin-install` installs the host into `~/.pulumi/plugins`, where `pulumi plugin ls` lists it
 - [ ] **Plugin publication** — Publish releases so `pulumi plugin install` can fetch the host instead of building it locally
-- [ ] **`pulumi new` template** — Provide a `julia` project template for bootstrapping new Pulumi Julia projects
+- [ ] **`pulumi new` template** — Provide a `julia` project template for bootstrapping new Pulumi Julia projects. `examples/local` is a working project to base it on, and the Quick Start documents the files by hand in the meantime
 - [x] **End-to-end lifecycle** — `pulumi preview` and `pulumi up` run a Julia program against a local backend: resources are created, and stack outputs, including secrets, are published and masked. Verified by hand with Pulumi CLI 3.215.0
 - [x] **End-to-end integration tests** — `test/integration/pulumi_cli_test.jl` runs the lifecycle and checks the outputs, including secret masking
 - [x] **End-to-end tests in CI** — The `integration` job in `CI.yml` builds and installs the language host and runs the lifecycle test

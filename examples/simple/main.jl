@@ -12,10 +12,9 @@ This example demonstrates basic usage of the Pulumi Julia SDK:
 4. Creating component resources
 5. Exporting stack outputs
 
-To run this example:
-1. pulumi new julia --name my-project
-2. Copy this file as main.jl
-3. pulumi up
+This example registers AWS resources, so deploying it needs the AWS provider
+plugin and valid AWS credentials. See README.md in this directory, and
+../local for a program that runs without a cloud account.
 """
 
 using Pulumi
