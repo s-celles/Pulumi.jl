@@ -56,7 +56,7 @@ jobs:
         with:
           go-version: 'stable'
           cache-dependency-path: bin/pulumi-language-julia/go.sum
-      - uses: pulumi/actions@v6
+      - uses: pulumi/actions@v7
 
       - name: Install dependencies
         run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
