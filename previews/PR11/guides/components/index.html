@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Components · Pulumi.jl</title><meta name="title" content="Components · Pulumi.jl"/><meta property="og:title" content="Components · Pulumi.jl"/><meta property="twitter:title" content="Components · Pulumi.jl"/><meta name="description" content="Documentation for Pulumi.jl."/><meta property="og:description" content="Documentation for Pulumi.jl."/><meta property="twitter:description" content="Documentation for Pulumi.jl."/><meta property="og:url" content="https://s-celles.github.io/Pulumi.jl/guides/components/"/><meta property="twitter:url" content="https://s-celles.github.io/Pulumi.jl/guides/components/"/><link rel="canonical" href="https://s-celles.github.io/Pulumi.jl/guides/components/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.63.2/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Pulumi.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Getting Started</span><ul><li><a class="tocitem" href="../../getting-started/installation/">Installation</a></li><li><a class="tocitem" href="../../getting-started/quickstart/">Quick Start</a></li></ul></li><li><span class="tocitem">Guides</span><ul><li><a class="tocitem" href="../resources/">Resources</a></li><li><a class="tocitem" href="../outputs/">Outputs</a></li><li><a class="tocitem" href="../configuration/">Configuration</a></li><li class="is-active"><a class="tocitem" href>Components</a><ul class="internal"><li><a class="tocitem" href="#Creating-Components"><span>Creating Components</span></a></li><li><a class="tocitem" href="#Component-Structure"><span>Component Structure</span></a></li><li><a class="tocitem" href="#Accessing-Children"><span>Accessing Children</span></a></li><li><a class="tocitem" href="#Registering-Outputs"><span>Registering Outputs</span></a></li><li><a class="tocitem" href="#Nested-Components"><span>Nested Components</span></a></li><li><a class="tocitem" href="#Best-Practices"><span>Best Practices</span></a></li><li><a class="tocitem" href="#Example:-VPC-Component"><span>Example: VPC Component</span></a></li></ul></li><li><a class="tocitem" href="../exports/">Stack Exports</a></li><li><a class="tocitem" href="../language-host/">Language Host</a></li></ul></li><li><a class="tocitem" href="../../api/">API Reference</a></li><li><a class="tocitem" href="../../internals/">Internals</a></li><li><a class="tocitem" href="../../maintenance/">Maintenance</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Guides</a></li><li class="is-active"><a href>Components</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Components</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/s-celles/Pulumi.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/s-celles/Pulumi.jl/blob/main/docs/src/guides/components.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Component-Resources"><a class="docs-heading-anchor" href="#Component-Resources">Component Resources</a><a id="Component-Resources-1"></a><a class="docs-heading-anchor-permalink" href="#Component-Resources" title="Permalink"></a></h1><p>Components allow you to create reusable abstractions that group related resources together.</p><h2 id="Creating-Components"><a class="docs-heading-anchor" href="#Creating-Components">Creating Components</a><a id="Creating-Components-1"></a><a class="docs-heading-anchor-permalink" href="#Creating-Components" title="Permalink"></a></h2><p>Use the <code>component</code> function to create a component resource:</p><pre><code class="language-julia hljs">using Pulumi
+
+webserver = component(&quot;my:module:WebServer&quot;, &quot;production-web&quot;) do parent
+    # Create child resources with parent reference
+    vm = register_resource(&quot;aws:ec2:Instance&quot;, &quot;vm&quot;, Dict{String,Any}(
+        &quot;ami&quot; =&gt; &quot;ami-0123456789&quot;,
+        &quot;instanceType&quot; =&gt; &quot;t2.micro&quot;
+    ), parent=parent)
+
+    sg = register_resource(&quot;aws:ec2:SecurityGroup&quot;, &quot;sg&quot;, Dict{String,Any}(
+        &quot;description&quot; =&gt; &quot;Web server security group&quot;,
+        &quot;ingress&quot; =&gt; [
+            Dict(&quot;protocol&quot; =&gt; &quot;tcp&quot;, &quot;fromPort&quot; =&gt; 80, &quot;toPort&quot; =&gt; 80)
+        ]
+    ), parent=parent)
+
+    # Return child resources
+    (vm=vm, sg=sg)
+end</code></pre><h2 id="Component-Structure"><a class="docs-heading-anchor" href="#Component-Structure">Component Structure</a><a id="Component-Structure-1"></a><a class="docs-heading-anchor-permalink" href="#Component-Structure" title="Permalink"></a></h2><p>Components establish a parent-child hierarchy in the Pulumi state:</p><pre><code class="nohighlight hljs">my:module:WebServer::production-web
+├── aws:ec2:Instance::vm
+└── aws:ec2:SecurityGroup::sg</code></pre><h2 id="Accessing-Children"><a class="docs-heading-anchor" href="#Accessing-Children">Accessing Children</a><a id="Accessing-Children-1"></a><a class="docs-heading-anchor-permalink" href="#Accessing-Children" title="Permalink"></a></h2><pre><code class="language-julia hljs"># Access child resources from the component
+webserver.children  # Vector of child resources
+
+# Access by name from returned tuple
+webserver_result = component(&quot;my:module:WebServer&quot;, &quot;web&quot;) do parent
+    vm = register_resource(...)
+    (vm=vm,)
+end
+# Note: Use the returned tuple, not webserver.children for named access</code></pre><h2 id="Registering-Outputs"><a class="docs-heading-anchor" href="#Registering-Outputs">Registering Outputs</a><a id="Registering-Outputs-1"></a><a class="docs-heading-anchor-permalink" href="#Registering-Outputs" title="Permalink"></a></h2><p>Register component outputs for cross-stack references:</p><pre><code class="language-julia hljs">webserver = component(&quot;my:module:WebServer&quot;, &quot;web&quot;) do parent
+    vm = register_resource(&quot;aws:ec2:Instance&quot;, &quot;vm&quot;, Dict{String,Any}(
+        &quot;ami&quot; =&gt; &quot;ami-123&quot;
+    ), parent=parent)
+
+    (vm=vm,)
+end
+
+# Register outputs for the component
+register_outputs(webserver, Dict{String,Any}(
+    &quot;publicIp&quot; =&gt; webserver.children[1].outputs[&quot;publicIp&quot;],
+    &quot;instanceId&quot; =&gt; webserver.children[1].outputs[&quot;id&quot;]
+))</code></pre><h2 id="Nested-Components"><a class="docs-heading-anchor" href="#Nested-Components">Nested Components</a><a id="Nested-Components-1"></a><a class="docs-heading-anchor-permalink" href="#Nested-Components" title="Permalink"></a></h2><p>Components can contain other components:</p><pre><code class="language-julia hljs">app = component(&quot;my:app:FullStack&quot;, &quot;myapp&quot;) do parent
+    # Frontend component
+    frontend = component(&quot;my:app:Frontend&quot;, &quot;frontend&quot;, parent=parent) do p
+        bucket = register_resource(&quot;aws:s3:Bucket&quot;, &quot;static&quot;, Dict{String,Any}(), parent=p)
+        (bucket=bucket,)
+    end
+
+    # Backend component
+    backend = component(&quot;my:app:Backend&quot;, &quot;backend&quot;, parent=parent) do p
+        db = register_resource(&quot;aws:rds:Instance&quot;, &quot;db&quot;, Dict{String,Any}(
+            &quot;engine&quot; =&gt; &quot;postgres&quot;
+        ), parent=p)
+        (db=db,)
+    end
+
+    (frontend=frontend, backend=backend)
+end</code></pre><h2 id="Best-Practices"><a class="docs-heading-anchor" href="#Best-Practices">Best Practices</a><a id="Best-Practices-1"></a><a class="docs-heading-anchor-permalink" href="#Best-Practices" title="Permalink"></a></h2><ol><li><p><strong>Use meaningful type names</strong>: Follow the pattern <code>organization:module:ResourceType</code></p></li><li><p><strong>Always pass parent</strong>: Child resources should reference the component as their parent</p></li><li><p><strong>Return a named tuple</strong>: Return child resources for easy access</p></li><li><p><strong>Register outputs</strong>: Make important values accessible via <code>register_outputs</code></p></li><li><p><strong>Document inputs</strong>: Clearly document what configuration your component expects</p></li></ol><h2 id="Example:-VPC-Component"><a class="docs-heading-anchor" href="#Example:-VPC-Component">Example: VPC Component</a><a id="Example:-VPC-Component-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-VPC-Component" title="Permalink"></a></h2><pre><code class="language-julia hljs">function create_vpc(name::String; cidr::String = &quot;10.0.0.0/16&quot;)
+    component(&quot;my:network:VPC&quot;, name) do parent
+        vpc = register_resource(&quot;aws:ec2:Vpc&quot;, &quot;vpc&quot;, Dict{String,Any}(
+            &quot;cidrBlock&quot; =&gt; cidr,
+            &quot;enableDnsHostnames&quot; =&gt; true
+        ), parent=parent)
+
+        public_subnet = register_resource(&quot;aws:ec2:Subnet&quot;, &quot;public&quot;, Dict{String,Any}(
+            &quot;vpcId&quot; =&gt; vpc.outputs[&quot;id&quot;],
+            &quot;cidrBlock&quot; =&gt; &quot;10.0.1.0/24&quot;,
+            &quot;mapPublicIpOnLaunch&quot; =&gt; true
+        ), parent=parent, depends_on=[vpc])
+
+        private_subnet = register_resource(&quot;aws:ec2:Subnet&quot;, &quot;private&quot;, Dict{String,Any}(
+            &quot;vpcId&quot; =&gt; vpc.outputs[&quot;id&quot;],
+            &quot;cidrBlock&quot; =&gt; &quot;10.0.2.0/24&quot;
+        ), parent=parent, depends_on=[vpc])
+
+        (vpc=vpc, public_subnet=public_subnet, private_subnet=private_subnet)
+    end
+end
+
+# Usage
+network = create_vpc(&quot;production&quot;, cidr=&quot;10.0.0.0/16&quot;)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../configuration/">« Configuration</a><a class="docs-footer-nextpage" href="../exports/">Stack Exports »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Wednesday 23 September 2026 13:25">Wednesday 23 September 2026</span>. Using Julia version 1.13.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
