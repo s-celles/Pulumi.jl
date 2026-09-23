@@ -1,7 +1,7 @@
 # Integration tests for Pulumi CLI integration
 # These tests verify end-to-end functionality with the Pulumi CLI
 
-@testset "Pulumi CLI Integration" begin
+@testitem "Pulumi CLI Integration" begin
     @testset "LanguageRuntime Server" begin
         # T022: Integration test for Pulumi CLI
         @testset "Server exports exist" begin

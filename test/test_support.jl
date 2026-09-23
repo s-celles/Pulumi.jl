@@ -1,13 +1,25 @@
-# An in-process stand-in for the Pulumi engine.
+# Shared setup for the test items.
 #
-# It serves the two gRPC services a Pulumi program talks to — `ResourceMonitor`
-# and `Engine` — so the integration tests exercise the real client stack:
-# serialization, the gRPC round trip and response handling. It records every
-# request it receives so tests can assert on what the program actually sent.
+# TestItemRunner runs every `@testitem` in its own module, so anything shared
+# lives here and is reached through the module name, for example
+# `TestSupport.with_fake_engine`.
 
+@testmodule TestSupport begin
+
+using Test
 using Sockets
+using Pulumi
 import gRPCServer
 import gRPCServer: ServiceDescriptor, MethodDescriptor, MethodType, ServerContext
+
+# ---------------------------------------------------------------------------
+# An in-process stand-in for the Pulumi engine
+#
+# It serves the two gRPC services a Pulumi program talks to — `ResourceMonitor`
+# and `Engine` — so the tests exercise the real client stack: serialization,
+# the gRPC round trip and response handling. It records every request it
+# receives so tests can assert on what the program actually sent.
+# ---------------------------------------------------------------------------
 
 const PB_ = Pulumi.pulumirpc
 
@@ -206,4 +218,78 @@ function with_fake_engine(f; project::String = "test-project", stack::String = "
             # Already stopped.
         end
     end
+end
+
+# ---------------------------------------------------------------------------
+# General test helpers
+# ---------------------------------------------------------------------------
+
+"""
+    collect_stream(T) -> (stream, sent, closed)
+
+Build a `ServerStream{T}` that records every message sent through it, so a
+streaming handler can be exercised without a live gRPC connection.
+"""
+function collect_stream(::Type{T}) where {T}
+    sent = T[]
+    closed = Ref(false)
+    stream = Pulumi.ServerStream{T}(
+        (message, _compress) -> (push!(sent, message); nothing),
+        () -> (closed[] = true; nothing),
+    )
+    return stream, sent, closed
+end
+
+"""
+    capture_stdout(f) -> (result, text)
+
+Run `f`, capturing anything it writes to stdout.
+"""
+function capture_stdout(f)
+    pipe = Pipe()
+    Base.link_pipe!(pipe; reader_supports_async = true, writer_supports_async = true)
+    result = try
+        redirect_stdout(f, pipe)
+    finally
+        close(pipe.in)
+    end
+    return result, String(read(pipe))
+end
+
+"""
+    free_port() -> Int
+
+Ask the kernel for a free TCP port and release it again.
+"""
+function free_port()
+    server = Sockets.listen(Sockets.localhost, 0)
+    port = Sockets.getsockname(server)[2]
+    close(server)
+    return Int(port)
+end
+
+# ---------------------------------------------------------------------------
+# Resource option helpers
+# ---------------------------------------------------------------------------
+
+const Alias = Pulumi.pulumirpc.Alias
+const CustomTimeouts = Pulumi.pulumirpc.var"RegisterResourceRequest.CustomTimeouts"
+
+"""
+    base_request(; kwargs...) -> Dict{String, Any}
+
+A minimal valid `RegisterResource` request dict, with `kwargs` merged in.
+"""
+function base_request(; kwargs...)
+    request = Dict{String, Any}(
+        "type" => "aws:s3/bucket:Bucket",
+        "name" => "my-bucket",
+        "object" => Dict{String, Any}(),
+    )
+    for (key, value) in kwargs
+        request[string(key)] = value
+    end
+    return request
+end
+
 end

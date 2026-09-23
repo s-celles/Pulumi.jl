@@ -1,7 +1,7 @@
 # Contract tests for LanguageRuntime gRPC service
 # These tests verify compliance with the Pulumi LanguageRuntime gRPC contract
 
-@testset "LanguageRuntime Contract" begin
+@testitem "LanguageRuntime Contract" begin
     @testset "Handshake RPC" begin
         # T012: Contract test for Handshake RPC
         @testset "Valid handshake request" begin
@@ -73,7 +73,7 @@
     end
 end
 
-@testset "LanguageRuntime Server Lifecycle" begin
+@testitem "LanguageRuntime Server Lifecycle" begin
     @testset "Server creation" begin
         # Verify server can be created
         @test isdefined(Pulumi, :create_language_runtime_server)
@@ -83,7 +83,7 @@ end
     end
 end
 
-@testset "Preview Mode Support (US5)" begin
+@testitem "Preview Mode Support (US5)" begin
     # T048: Contract test for dryRun flag handling
 
     @testset "dryRun flag context" begin

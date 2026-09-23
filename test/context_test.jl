@@ -1,4 +1,4 @@
-@testset "Context" begin
+@testitem "Context" begin
     # Save original environment
     original_env = Dict{String, String}()
     env_keys = [

@@ -2,7 +2,7 @@
 # T041-T042: Contract tests for MonitorClient.invoke_rpc()
 # These tests verify compliance with the Pulumi gRPC contract for provider invocations
 
-@testset "Invoke Contract" begin
+@testitem "Invoke Contract" begin
     @testset "Function exists" begin
         # Verify invoke_rpc exists
         @test isdefined(Pulumi, :invoke_rpc)

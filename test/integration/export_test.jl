@@ -4,9 +4,9 @@
 # publishes every exported value against it, so these tests check the whole
 # round trip against the fake engine.
 
-@testset "Stack Exports Integration" begin
+@testitem "Stack Exports Integration" setup=[TestSupport] begin
     @testset "Export values are registered" begin
-        with_fake_engine() do engine
+        TestSupport.with_fake_engine() do engine
             clear_exports!()
             try
                 export_value("bucketName", "assets-bucket")
@@ -21,7 +21,7 @@
                 # SDK registers, not to any resource of the program. A real
                 # engine does not report a root resource of its own, which is
                 # why `GetRootResource` cannot be used for this.
-                @test request.urn == stack_urn()
+                @test request.urn == TestSupport.stack_urn()
                 @test isempty(engine.root_urn)
 
                 # That root resource really was registered.
@@ -37,7 +37,7 @@
     end
 
     @testset "Resource outputs can be exported" begin
-        with_fake_engine() do engine
+        TestSupport.with_fake_engine() do engine
             clear_exports!()
             try
                 bucket = register_resource("aws:s3:Bucket", "assets",
@@ -57,7 +57,7 @@
     end
 
     @testset "Secrets are published in a secret envelope" begin
-        with_fake_engine() do engine
+        TestSupport.with_fake_engine() do engine
             clear_exports!()
             try
                 export_secret("dbPassword", "hunter2")
@@ -80,7 +80,7 @@
     end
 
     @testset "Nothing is published when nothing is exported" begin
-        with_fake_engine() do engine
+        TestSupport.with_fake_engine() do engine
             clear_exports!()
             Pulumi.register_stack_outputs()
             @test isempty(engine.outputs)
@@ -88,12 +88,12 @@
     end
 end
 
-@testset "Running a program publishes its exports" begin
+@testitem "Running a program publishes its exports" setup=[TestSupport] begin
     # The Pulumi CLI never calls `register_stack_outputs` itself, so running a
     # program has to do it: otherwise `pulumi stack output` comes back empty
     # however many values the program exported.
     @testset "run_program registers the stack outputs" begin
-        with_fake_engine() do engine
+        TestSupport.with_fake_engine() do engine
             clear_exports!()
             try
                 mktempdir() do dir
@@ -118,7 +118,7 @@ end
     end
 
     @testset "The program runs in Main, not inside Pulumi" begin
-        with_fake_engine() do engine
+        TestSupport.with_fake_engine() do engine
             clear_exports!()
             try
                 mktempdir() do dir
@@ -140,7 +140,7 @@ end
     end
 
     @testset "A failing program propagates the error" begin
-        with_fake_engine() do engine
+        TestSupport.with_fake_engine() do engine
             clear_exports!()
             try
                 mktempdir() do dir
@@ -158,7 +158,7 @@ end
     end
 
     @testset "A missing program is reported" begin
-        with_fake_engine() do _
+        TestSupport.with_fake_engine() do _
             @test_throws ArgumentError Pulumi.run_program(joinpath(tempdir(), "nope-$(rand(UInt32)).jl"))
         end
     end

@@ -4,60 +4,15 @@
 # `pulumi-language-julia`: ephemeral port binding and port announcement,
 # dependency installation and dependency reporting.
 
-using Sockets
-
-"""
-    collect_stream(T) -> (stream, sent, closed)
-
-Build a `ServerStream{T}` that records every message sent through it, so a
-streaming handler can be exercised without a live gRPC connection.
-"""
-function collect_stream(::Type{T}) where {T}
-    sent = T[]
-    closed = Ref(false)
-    stream = Pulumi.ServerStream{T}(
-        (message, _compress) -> (push!(sent, message); nothing),
-        () -> (closed[] = true; nothing),
-    )
-    return stream, sent, closed
-end
-
-"""
-    capture_stdout(f) -> (result, text)
-
-Run `f`, capturing anything it writes to stdout.
-"""
-function capture_stdout(f)
-    pipe = Pipe()
-    Base.link_pipe!(pipe; reader_supports_async = true, writer_supports_async = true)
-    result = try
-        redirect_stdout(f, pipe)
-    finally
-        close(pipe.in)
-    end
-    return result, String(read(pipe))
-end
-
-"""
-    free_port() -> Int
-
-Ask the kernel for a free TCP port and release it again.
-"""
-function free_port()
-    server = Sockets.listen(Sockets.localhost, 0)
-    port = Sockets.getsockname(server)[2]
-    close(server)
-    return Int(port)
-end
-
-@testset "LanguageRuntime Server" begin
+@testitem "LanguageRuntime Server" setup=[TestSupport] begin
+    using Sockets
     @testset "Ephemeral port binding" begin
         # The Pulumi plugin protocol launches the host with no port and reads
         # the chosen port from stdout, so port 0 must be accepted.
         server = create_language_runtime_server("127.0.0.1", 0)
         @test server isa LanguageRuntimeServer
 
-        port, printed = capture_stdout() do
+        port, printed = TestSupport.capture_stdout() do
             start_and_print_port!(server)
         end
 
@@ -79,11 +34,11 @@ end
     end
 
     @testset "Explicit port is honoured" begin
-        port = free_port()
+        port = TestSupport.free_port()
         server = create_language_runtime_server("127.0.0.1", port)
         @test server.port == port
 
-        announced, printed = capture_stdout() do
+        announced, printed = TestSupport.capture_stdout() do
             start_and_print_port!(server)
         end
 
@@ -101,7 +56,7 @@ end
     end
 end
 
-@testset "GetProgramDependencies handler" begin
+@testitem "GetProgramDependencies handler" setup=[TestSupport] begin
     ctx = Pulumi.ServerContext(method = "GetProgramDependencies")
 
     @testset "Parses Project.toml dependencies" begin
@@ -198,7 +153,7 @@ end
     end
 end
 
-@testset "InstallDependencies handler" begin
+@testitem "InstallDependencies handler" setup=[TestSupport] begin
     ctx = Pulumi.ServerContext(method = "InstallDependencies")
 
     @testset "Instantiates the project and streams output" begin
@@ -215,7 +170,7 @@ end
 
             runtime = JuliaLanguageRuntime()
             request = Pulumi.InstallDependenciesRequest(dir, false, nothing, false, false)
-            stream, sent, _ = collect_stream(Pulumi.InstallDependenciesResponse)
+            stream, sent, _ = TestSupport.collect_stream(Pulumi.InstallDependenciesResponse)
 
             Pulumi.handle_install_dependencies(runtime, ctx, request, stream)
 
@@ -235,7 +190,7 @@ end
 
             runtime = JuliaLanguageRuntime()
             request = Pulumi.InstallDependenciesRequest(dir, false, nothing, false, false)
-            stream, sent, _ = collect_stream(Pulumi.InstallDependenciesResponse)
+            stream, sent, _ = TestSupport.collect_stream(Pulumi.InstallDependenciesResponse)
 
             Pulumi.handle_install_dependencies(runtime, ctx, request, stream)
 
@@ -249,7 +204,7 @@ end
         runtime = JuliaLanguageRuntime()
         missing_dir = joinpath(tempdir(), "pulumi-jl-does-not-exist-$(rand(UInt32))")
         request = Pulumi.InstallDependenciesRequest(missing_dir, false, nothing, false, false)
-        stream, sent, _ = collect_stream(Pulumi.InstallDependenciesResponse)
+        stream, sent, _ = TestSupport.collect_stream(Pulumi.InstallDependenciesResponse)
 
         Pulumi.handle_install_dependencies(runtime, ctx, request, stream)
 
@@ -258,7 +213,7 @@ end
     end
 end
 
-@testset "Run handler execution context" begin
+@testitem "Run handler execution context" setup=[TestSupport] begin
     @testset "Propagates project, stack and organization from the request" begin
         saved = Dict(
             key => get(ENV, key, nothing) for key in
@@ -269,7 +224,7 @@ end
         try
             # Running a program needs a live resource monitor: the host
             # registers the root stack resource before the program runs.
-            with_fake_engine() do engine
+            TestSupport.with_fake_engine() do engine
                 mktempdir() do dir
                     program = joinpath(dir, "main.jl")
                     write(program, "# empty Pulumi program\n")
@@ -340,14 +295,14 @@ end
     end
 end
 
-@testset "Graceful shutdown" begin
+@testitem "Graceful shutdown" setup=[TestSupport] begin
     @testset "stop_server! is idempotent" begin
         server = create_language_runtime_server("127.0.0.1", 0)
 
         # Never started: stopping is a no-op rather than an error.
         @test stop_server!(server) === nothing
 
-        capture_stdout() do
+        TestSupport.capture_stdout() do
             start_and_print_port!(server)
         end
         @test stop_server!(server) === nothing

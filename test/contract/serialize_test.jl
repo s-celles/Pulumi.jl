@@ -1,7 +1,7 @@
 # Contract tests for serialization
 # T049: Contract test for unknown Output serialization in preview mode
 
-@testset "Serialization Contract" begin
+@testitem "Serialization Contract" begin
     @testset "Dict to Struct conversion" begin
         # Verify conversion functions exist
         @test isdefined(Pulumi, :dict_to_struct)
@@ -111,7 +111,7 @@
     end
 end
 
-@testset "Preview Mode Serialization" begin
+@testitem "Preview Mode Serialization" begin
     # T049: Unknown values during preview
 
     @testset "Unknown value markers" begin

@@ -1,4 +1,4 @@
-@testset "Type Stability" begin
+@testitem "Type Stability" begin
     @testset "Output type stability" begin
         # Output preserves type parameter
         o_int = Output(42)

@@ -1,7 +1,7 @@
 # Integration tests for parallel resource creation
 
-@testset "Parallel Resource Creation" begin
-    with_fake_engine() do engine
+@testitem "Parallel Resource Creation" setup=[TestSupport] begin
+    TestSupport.with_fake_engine() do engine
         @testset "register_resources_parallel creates multiple resources" begin
             resources = register_resources_parallel([
                 ("aws:s3:Bucket", "bucket1", Dict{String, Any}("acl" => "private")),

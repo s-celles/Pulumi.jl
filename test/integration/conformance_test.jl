@@ -2,7 +2,7 @@
 # These tests verify the Julia SDK behaves correctly as a Pulumi language runtime
 # by testing all core functionality in an integrated way.
 
-@testset "SDK Conformance" begin
+@testitem "SDK Conformance" setup=[TestSupport] begin
     # Save original environment for restoration
     original_env = Dict{String, String}()
     env_keys = [
@@ -225,7 +225,7 @@
         @testset "register_resource Protocol" begin
             # These run against the in-process fake engine, so they exercise
             # the real gRPC path without needing a Pulumi CLI.
-            with_fake_engine() do engine
+            TestSupport.with_fake_engine() do engine
                 @testset "Basic resource registration" begin
                     resource = register_resource(
                         "aws:s3:Bucket",
@@ -277,7 +277,7 @@
         end
 
         @testset "Component Resource Protocol" begin
-            with_fake_engine() do engine
+            TestSupport.with_fake_engine() do engine
                 @testset "component() function" begin
                     comp = component("my:module:TestComponent", "test-comp") do parent
                         # Create child resources

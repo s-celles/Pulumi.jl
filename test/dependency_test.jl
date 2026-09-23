@@ -1,4 +1,4 @@
-@testset "Dependency Graph" begin
+@testitem "Dependency Graph" begin
     @testset "Basic graph operations" begin
         graph = DependencyGraph()
 

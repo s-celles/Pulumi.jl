@@ -2,7 +2,7 @@
 # T024: Contract test for MonitorClient.register_resource_outputs_rpc()
 # These tests verify compliance with the Pulumi gRPC contract
 
-@testset "RegisterResourceOutputs Contract" begin
+@testitem "RegisterResourceOutputs Contract" begin
     @testset "Function exists" begin
         # Verify register_resource_outputs_rpc exists
         @test isdefined(Pulumi, :register_resource_outputs_rpc)

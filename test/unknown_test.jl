@@ -1,4 +1,4 @@
-@testset "Unknown type" begin
+@testitem "Unknown type" begin
     u = Unknown()
     @test u isa Unknown
 

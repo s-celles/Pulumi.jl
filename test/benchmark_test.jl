@@ -2,7 +2,7 @@
 # T094: gRPC serialization <10ms
 # T095: Startup time <2s
 
-@testset "Benchmarks" begin
+@testitem "Benchmarks" begin
     @testset "Output creation benchmark" begin
         # Basic performance check
         start = time_ns()

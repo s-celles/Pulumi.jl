@@ -5,7 +5,7 @@
 # the whole property map with "unrecognized signature", which takes the
 # deployment down, so the exact constants matter.
 
-@testset "Secret envelope" begin
+@testitem "Secret envelope" begin
     @testset "Signature constants match the Pulumi protocol" begin
         # The reserved key every special value uses.
         @test Pulumi.SIG_KEY == "4dabf18193072939515e22adb298388d"

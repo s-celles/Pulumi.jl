@@ -1,4 +1,4 @@
-@testset "Stack Exports" begin
+@testitem "Stack Exports" begin
     @testset "export_value" begin
         clear_exports!()
 

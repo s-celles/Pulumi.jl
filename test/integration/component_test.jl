@@ -3,9 +3,9 @@
 # These run a real gRPC round trip against the fake engine, so they assert on
 # what the Pulumi engine actually receives, not just on the Julia side.
 
-@testset "Component Resources" begin
+@testitem "Component Resources" setup=[TestSupport] begin
     @testset "Component with children" begin
-        with_fake_engine() do engine
+        TestSupport.with_fake_engine() do engine
             child = Ref{Any}(nothing)
 
             comp = component("my:mod:Bucket", "assets") do _
@@ -37,7 +37,7 @@
     end
 
     @testset "Nested components" begin
-        with_fake_engine() do engine
+        TestSupport.with_fake_engine() do engine
             outer = component("my:mod:Outer", "outer") do parent
                 inner = component("my:mod:Inner", "inner"; parent = parent) do _
                     return register_resource("aws:s3:Bucket", "inner-bucket",
@@ -67,7 +67,7 @@
     end
 
     @testset "register_outputs publishes the component's outputs" begin
-        with_fake_engine() do engine
+        TestSupport.with_fake_engine() do engine
             comp = component("my:mod:Bucket", "assets") do _
                 return register_resource("aws:s3:Bucket", "assets-bucket", Dict{String, Any}())
             end
@@ -88,7 +88,7 @@
     end
 
     @testset "A failing body does not leave the component registered as created" begin
-        with_fake_engine() do engine
+        TestSupport.with_fake_engine() do engine
             @test_throws ErrorException component("my:mod:Broken", "broken") do _
                 error("child construction failed")
             end

@@ -1,4 +1,4 @@
-@testset "Invoke" begin
+@testitem "Invoke" setup=[TestSupport] begin
     # Note: These are basic tests; full invoke testing requires a mock monitor
 
     @testset "invoke function exists" begin
@@ -7,7 +7,7 @@
     end
 
     @testset "invoke reaches the monitor and returns an Output" begin
-        with_fake_engine() do engine
+        TestSupport.with_fake_engine() do engine
             engine.invoke_results["test:index:getThing"] =
                 Dict{String, Any}("name" => "thing", "size" => 7)
 
@@ -27,7 +27,7 @@
     end
 
     @testset "invoke without a canned result echoes its arguments" begin
-        with_fake_engine() do _
+        TestSupport.with_fake_engine() do _
             result = Pulumi.invoke("test:index:echo", Dict{String, Any}("hello" => "world"))
             @test Pulumi.get_value(result)["hello"] == "world"
         end

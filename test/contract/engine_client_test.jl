@@ -1,7 +1,7 @@
 # Contract tests for Engine Client
 # These tests verify compliance with the Pulumi Engine gRPC contract
 
-@testset "Engine Client Contract" begin
+@testitem "Engine Client Contract" begin
     @testset "Log RPC" begin
         # T032: Contract test for EngineClient.log_rpc()
         @testset "Log request format" begin

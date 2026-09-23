@@ -1,4 +1,4 @@
-@testset "Resource" begin
+@testitem "Resource" begin
     @testset "URN parsing" begin
         # Basic URN: urn:pulumi:{stack}::{project}::{type}::{name}
         urn_str = "urn:pulumi:dev::my-project::aws:s3:Bucket::my-bucket"

@@ -98,6 +98,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The test suite is written as TestItemRunner test items. Each one runs in its
+  own module and can be run on its own from an editor or with
+  `just test-item <pattern>`; shared setup lives in the `TestSupport` test
+  module
+
 - The protobuf bindings are regenerated with ProtoBuf.jl 1.3.0. The previous
   ones were generated with 1.2.0, and every deployment printed a deprecation
   warning in the Pulumi CLI's diagnostics

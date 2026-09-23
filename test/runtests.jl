@@ -1,87 +1,21 @@
-using Test
-using Pulumi
+# The suite is written as TestItemRunner test items: every `@testitem` in this
+# directory runs in its own module, so they can be run individually from an
+# editor as well as all together here.
+#
+# Shared setup lives in `test_support.jl` as the `TestSupport` test module.
+#
+# Pass a pattern to run only the matching items, by name or by file:
+#
+#     julia --project=. -e 'using Pkg; Pkg.test(test_args=["Secret envelope"])'
+#     just test-item "Secret envelope"
 
-# Shared test helper: an in-process stand-in for the Pulumi engine.
-include("fake_engine.jl")
+using TestItemRunner
 
-@testset "Pulumi.jl" begin
-    @testset "Enums" begin
-        include("enums_test.jl")
-    end
-
-    @testset "Errors" begin
-        include("errors_test.jl")
-    end
-
-    @testset "Unknown" begin
-        include("unknown_test.jl")
-    end
-
-    @testset "Output" begin
-        include("output_test.jl")
-    end
-
-    @testset "Resource" begin
-        include("resource_test.jl")
-    end
-
-    @testset "Context" begin
-        include("context_test.jl")
-    end
-
-    @testset "Config" begin
-        include("config_test.jl")
-    end
-
-    @testset "Export" begin
-        include("export_test.jl")
-    end
-
-    @testset "Invoke" begin
-        include("invoke_test.jl")
-    end
-
-    @testset "Dependency" begin
-        include("dependency_test.jl")
-    end
-
-    @testset "Type Stability" begin
-        include("type_stability_test.jl")
-    end
-
-    @testset "Secret Envelope" begin
-        include("secret_envelope_test.jl")
-    end
-
-    @testset "Resource Options" begin
-        include("resource_options_test.jl")
-    end
-
-    @testset "Server" begin
-        include("server_test.jl")
-    end
-
-    @testset "Aqua" begin
-        include("aqua_test.jl")
-    end
-
-    @testset "Contract Tests" begin
-        include("contract/register_resource_test.jl")
-        include("contract/register_outputs_test.jl")
-        include("contract/invoke_test.jl")
-        include("contract/language_runtime_test.jl")
-        include("contract/engine_client_test.jl")
-    end
-
-    @testset "Integration Tests" begin
-        include("integration/parallel_test.jl")
-        include("integration/component_test.jl")
-        include("integration/export_test.jl")
-        include("integration/conformance_test.jl")
-        include("integration/pulumi_cli_test.jl")
-    end
-
-    @testset "Benchmarks" begin
-        include("benchmark_test.jl")
+if isempty(ARGS)
+    @run_package_tests
+else
+    let pattern = ARGS[1]
+        @run_package_tests filter = ti -> occursin(pattern, ti.name) ||
+                                          occursin(pattern, ti.filename)
     end
 end

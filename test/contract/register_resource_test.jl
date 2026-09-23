@@ -2,7 +2,7 @@
 # T023: Contract test for MonitorClient.register_resource_rpc()
 # These tests verify compliance with the Pulumi gRPC contract
 
-@testset "RegisterResource Contract" begin
+@testitem "RegisterResource Contract" begin
     @testset "MonitorClient structure" begin
         # Verify MonitorClient exists with required fields
         @test isdefined(Pulumi, :MonitorClient)

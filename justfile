@@ -21,9 +21,10 @@ test:
 test-integration:
     PULUMI_TEST_INTEGRATION=true {{julia}} --project=. -e 'using Pkg; Pkg.test()'
 
-# Run a single test file, e.g. `just test-file server_test.jl`.
-test-file file:
-    {{julia}} --project=. -e 'using Test, Pulumi; include("test/{{file}}")'
+# Run only the matching test items, by name or file, e.g.
+# `just test-item "Secret envelope"`.
+test-item pattern:
+    {{julia}} --project=. -e 'using Pkg; Pkg.test(test_args=["{{pattern}}"])'
 
 # Report test coverage.
 coverage:

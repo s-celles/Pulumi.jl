@@ -63,7 +63,7 @@
 
 ### Testing
 
-- [ ] **TestItemRunner.jl** — Migrate the test suite from plain `Test.jl` testsets to `@testitem` blocks, the preferred style for TDD in this project
+- [x] **TestItemRunner.jl** — The suite is `@testitem` blocks with a shared `TestSupport` test module; `just test-item <pattern>` runs a subset
 
 ---
 

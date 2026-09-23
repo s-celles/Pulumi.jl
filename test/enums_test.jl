@@ -1,4 +1,4 @@
-@testset "LogSeverity" begin
+@testitem "LogSeverity" begin
     @test LogSeverity.DEBUG == "debug"
     @test LogSeverity.INFO == "info"
     @test LogSeverity.WARNING == "warning"
@@ -6,7 +6,7 @@
     @test LogSeverity.T === String
 end
 
-@testset "ResourceState" begin
+@testitem "ResourceState" begin
     @test ResourceState.PENDING isa ResourceState.T
     @test ResourceState.CREATING isa ResourceState.T
     @test ResourceState.CREATED isa ResourceState.T

@@ -1,4 +1,4 @@
-@testset "Output" begin
+@testitem "Output" begin
     @testset "Output creation" begin
         # Known value
         o = Output(42)
