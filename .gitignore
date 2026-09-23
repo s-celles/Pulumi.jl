@@ -31,6 +31,15 @@
 !.github/
 !.github/**
 !.codecov.yml
+!CITATION.cff
+
+# Formatter, linter and editor configuration (BestieTemplate.jl conventions)
+!.JuliaFormatter.toml
+!.editorconfig
+!.markdownlint.json
+!.yamllint.yml
+!.yamlfmt.yml
+!.pre-commit-config.yaml
 
 # Source code
 !src/

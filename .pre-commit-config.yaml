@@ -1,0 +1,41 @@
+# Run these with `pre-commit run -a`, or install them with `pre-commit install`.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-json
+      - id: check-toml
+      - id: check-yaml
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: no-commit-to-branch
+      - id: pretty-format-json
+        args: [--autofix, --indent=2]
+      - id: trailing-whitespace
+        # The generated protobuf bindings are not ours to reformat.
+        exclude: ^src/grpc/proto/
+      - id: end-of-file-fixer
+        exclude: ^src/grpc/proto/
+      - id: check-merge-conflict
+        args: [--assume-in-merge]
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.43.0
+    hooks:
+      - id: markdownlint-fix
+  - repo: https://github.com/citation-file-format/cffconvert
+    rev: 054bda51dbe278b3e86f27c890e3f3ac877d616c
+    hooks:
+      - id: validate-cff
+  - repo: https://github.com/google/yamlfmt
+    rev: v0.16.0
+    hooks:
+      - id: yamlfmt
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+  - repo: https://github.com/domluna/JuliaFormatter.jl
+    rev: v2.0.0
+    hooks:
+      - id: julia-formatter
+        exclude: ^src/grpc/proto/
