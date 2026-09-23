@@ -83,14 +83,24 @@ more than once.
 
 ## Installing the plugin
 
-The Pulumi CLI discovers a language plugin as an executable named
-`pulumi-language-<runtime>` on `PATH`. Build the Go host and put it somewhere on
-your `PATH`:
+Build the Go host and install it where the Pulumi CLI looks for plugins:
 
 ```bash
-just plugin-build
-export PATH="$PWD/bin/pulumi-language-julia:$PATH"
+just plugin-install
 ```
+
+That puts `pulumi-language-julia` in `~/.pulumi/plugins/language-julia-v<version>/`
+(or under `$PULUMI_HOME`), where `pulumi plugin ls` will list it:
+
+```console
+$ pulumi plugin ls
+NAME   KIND      VERSION  SIZE   INSTALLED  LAST USED
+julia  language  0.1.0    20 MB  now        now
+```
+
+The CLI also accepts an executable named `pulumi-language-julia` found on
+`PATH`, which is handy while working on the host itself, but it prints a
+warning on every run.
 
 A project then selects it through `Pulumi.yaml`:
 

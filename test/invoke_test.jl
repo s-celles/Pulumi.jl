@@ -6,45 +6,30 @@
         @test hasmethod(Pulumi.invoke, Tuple{String, Dict{String, Any}})
     end
 
-    @testset "invoke returns Output (requires gRPC)" begin
-        # This test requires a running gRPC server
-        # Skip unless PULUMI_TEST_INTEGRATION is set
-        if get(ENV, "PULUMI_TEST_INTEGRATION", "false") == "true"
-            # Save original context
-            original_env = Dict{String, String}()
-            env_keys = ["PULUMI_PROJECT", "PULUMI_STACK", "PULUMI_MONITOR", "PULUMI_ENGINE", "PULUMI_CONFIG", "PULUMI_CONFIG_SECRET_KEYS"]
-            for key in env_keys
-                if haskey(ENV, key)
-                    original_env[key] = ENV[key]
-                end
-            end
+    @testset "invoke reaches the monitor and returns an Output" begin
+        with_fake_engine() do engine
+            engine.invoke_results["test:index:getThing"] =
+                Dict{String, Any}("name" => "thing", "size" => 7)
 
-            try
-                reset_context!()
-                ENV["PULUMI_PROJECT"] = "test"
-                ENV["PULUMI_STACK"] = "dev"
-                ENV["PULUMI_MONITOR"] = "localhost:12345"
-                ENV["PULUMI_ENGINE"] = ""
-                ENV["PULUMI_CONFIG"] = "{}"
-                ENV["PULUMI_CONFIG_SECRET_KEYS"] = "[]"
+            result = Pulumi.invoke("test:index:getThing", Dict{String, Any}("id" => "abc"))
 
-                # This will use the actual gRPC call
-                result = Pulumi.invoke("test:provider:function", Dict{String, Any}("arg1" => "value"))
+            @test result isa Output
+            @test Pulumi.is_known(result)
+            value = Pulumi.get_value(result)
+            @test value["name"] == "thing"
+            @test value["size"] == 7
 
-                @test result isa Output
-            finally
-                for key in env_keys
-                    if haskey(original_env, key)
-                        ENV[key] = original_env[key]
-                    else
-                        delete!(ENV, key)
-                    end
-                end
-                reset_context!()
-            end
-        else
-            @info "Skipping invoke gRPC test (requires PULUMI_TEST_INTEGRATION=true)"
-            @test_skip true
+            # The arguments really travelled to the monitor.
+            @test length(engine.invokes) == 1
+            @test engine.invokes[1].tok == "test:index:getThing"
+            @test Pulumi.struct_to_dict(engine.invokes[1].args)["id"] == "abc"
+        end
+    end
+
+    @testset "invoke without a canned result echoes its arguments" begin
+        with_fake_engine() do _
+            result = Pulumi.invoke("test:index:echo", Dict{String, Any}("hello" => "world"))
+            @test Pulumi.get_value(result)["hello"] == "world"
         end
     end
 end

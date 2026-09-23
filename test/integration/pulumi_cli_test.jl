@@ -98,56 +98,119 @@
         @test unknown_output.value isa Pulumi.Unknown
     end
 
-    # Full integration tests with actual Pulumi CLI
-    # These require: Pulumi CLI installed, test project, network connectivity
-    if get(ENV, "PULUMI_TEST_INTEGRATION", "false") == "true"
-        @testset "Pulumi Preview Integration" begin
+    # A real deployment driven by the Pulumi CLI. This needs the CLI itself and
+    # the language host installed as a plugin (`just plugin-install`), so it is
+    # opt-in. It uses a temporary file backend and never touches the user's
+    # login or their stacks.
+    function julia_plugin_installed()
+        Sys.which("pulumi-language-julia") === nothing || return true
+        home = get(ENV, "PULUMI_HOME", joinpath(homedir(), ".pulumi"))
+        plugins = joinpath(home, "plugins")
+        isdir(plugins) || return false
+        return Base.any(startswith("language-julia-v"), readdir(plugins))
+    end
+
+    if get(ENV, "PULUMI_TEST_INTEGRATION", "false") != "true"
+        @info "Skipping Pulumi CLI integration tests (set PULUMI_TEST_INTEGRATION=true to enable)"
+    elseif Sys.which("pulumi") === nothing
+        @info "Skipping Pulumi CLI integration tests (the pulumi CLI is not on PATH)"
+    elseif !julia_plugin_installed()
+        @info "Skipping Pulumi CLI integration tests (run `just plugin-install` first)"
+    else
+        @testset "A Julia program deploys end to end" begin
+            repo = dirname(dirname(@__DIR__))
+
             mktempdir() do dir
-                # Create minimal Pulumi project
-                pulumi_yaml = joinpath(dir, "Pulumi.yaml")
-                write(pulumi_yaml, """
-name: test-julia-project
-runtime:
-  name: julia
-  options:
-    binary: $(Base.julia_cmd().exec[1])
-description: Test project for Julia Pulumi integration
-""")
+                write(joinpath(dir, "Pulumi.yaml"), """
+                name: julia-cli-test
+                runtime: julia
+                description: End-to-end check driven by the Pulumi CLI
+                """)
 
-                main_jl = joinpath(dir, "Pulumi.jl")
-                write(main_jl, """
-# Minimal Pulumi program for integration test
-using Pulumi
+                write(joinpath(dir, "Project.toml"), """
+                name = "JuliaCliTest"
+                uuid = "33333333-4444-5555-6666-777777777777"
 
-# T031: Resource registration test
-# In a real scenario, this would register a resource
-# For now, just verify context is available
-ctx = get_context()
+                [deps]
+                Pulumi = "90af1f71-c6d8-4a0a-9f87-1292e80e7fff"
 
-# T040: Logging test
-log_info("Integration test running")
+                [sources]
+                Pulumi = {path = "$(repo)"}
+                """)
 
-# T054: Preview mode test
-if is_dry_run()
-    log_info("Running in preview mode")
-end
+                write(joinpath(dir, "main.jl"), """
+                using Pulumi
 
-# Export some outputs for verification
-export_value("test_output", "integration_test_passed")
-""")
+                log_info("integration program running")
+
+                group = component("julia:test:Group", "demo") do _
+                    return nothing
+                end
+                register_outputs(group, Dict{String, Any}("ready" => true))
+
+                export_value("greeting", "hello from Julia")
+                export_value("dryRun", is_dry_run())
+                export_secret("token", "s3cr3t")
+                """)
+
+                # Resolve the program's environment up front; the CLI only
+                # installs dependencies on demand.
+                run(pipeline(addenv(
+                    `$(Base.julia_cmd()) --project=$dir --startup-file=no -e "using Pkg; Pkg.instantiate()"`,
+                    "JULIA_LOAD_PATH" => "@:@stdlib", "JULIA_PROJECT" => nothing,
+                ); stdout = devnull, stderr = devnull))
+
+                state = mkpath(joinpath(dir, "state"))
+                pulumi(args...) = addenv(`pulumi $args`,
+                    "PULUMI_BACKEND_URL" => "file://$(state)",
+                    "PULUMI_CONFIG_PASSPHRASE" => "integration-test",
+                    "PULUMI_SKIP_UPDATE_CHECK" => "true",
+                )
 
                 cd(dir) do
-                    # Initialize a local backend
-                    run(`pulumi login --local`)
-                    run(`pulumi stack init test-stack`)
+                    try
+                        run(pipeline(pulumi("stack", "init", "dev"); stdout = devnull, stderr = devnull))
 
-                    # Run preview (T054: preview mode test)
-                    result = read(`pulumi preview --non-interactive --json`, String)
-                    @test occursin("test-julia-project", result)
+                        @testset "pulumi preview plans the resources" begin
+                            output = read(pipeline(pulumi("preview", "--non-interactive"); stderr = devnull), String)
+                            @test occursin("julia:test:Group", output)
+                        end
+
+                        @testset "pulumi up creates them and publishes the outputs" begin
+                            run(pipeline(pulumi("up", "--yes", "--non-interactive"); stdout = devnull, stderr = devnull))
+
+                            outputs = Pulumi.JSON.parse(read(pipeline(
+                                pulumi("stack", "output", "--json", "--show-secrets"); stderr = devnull), String))
+
+                            @test outputs["greeting"] == "hello from Julia"
+                            # The program ran for real, not as a preview.
+                            @test outputs["dryRun"] == false
+                            @test outputs["token"] == "s3cr3t"
+                        end
+
+                        @testset "Secrets are masked unless asked for" begin
+                            outputs = Pulumi.JSON.parse(read(pipeline(
+                                pulumi("stack", "output", "--json"); stderr = devnull), String))
+
+                            @test outputs["greeting"] == "hello from Julia"
+                            @test outputs["token"] != "s3cr3t"
+                        end
+
+                        @testset "pulumi destroy removes them" begin
+                            run(pipeline(pulumi("destroy", "--yes", "--non-interactive"); stdout = devnull, stderr = devnull))
+
+                            output = read(pipeline(pulumi("stack", "output", "--json"); stderr = devnull), String)
+                            @test Pulumi.JSON.parse(output) == Dict{String, Any}()
+                        end
+                    finally
+                        try
+                            run(pipeline(pulumi("stack", "rm", "--yes", "--force"); stdout = devnull, stderr = devnull))
+                        catch
+                            # The stack may not exist if init failed.
+                        end
+                    end
                 end
             end
         end
-    else
-        @info "Skipping Pulumi CLI integration tests (set PULUMI_TEST_INTEGRATION=true to enable)"
     end
 end

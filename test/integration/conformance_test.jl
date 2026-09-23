@@ -25,6 +25,8 @@
         # Set up mock Pulumi environment
         ENV["PULUMI_PROJECT"] = "conformance-test"
         ENV["PULUMI_STACK"] = "test-stack"
+        # A placeholder: the testsets that actually talk to a monitor start a
+        # fake engine of their own and point the context at it.
         ENV["PULUMI_MONITOR"] = "localhost:54321"
         ENV["PULUMI_ENGINE"] = ""
         ENV["PULUMI_CONFIG"] = """{"conformance-test:testKey":"testValue","conformance-test:secretKey":"secret123","conformance-test:intKey":"42","conformance-test:boolKey":"true"}"""
@@ -221,9 +223,9 @@
         end
 
         @testset "register_resource Protocol" begin
-            # These tests require actual gRPC connection to a monitor
-            # Skip when not running integration tests
-            if get(ENV, "PULUMI_TEST_INTEGRATION", "false") == "true"
+            # These run against the in-process fake engine, so they exercise
+            # the real gRPC path without needing a Pulumi CLI.
+            with_fake_engine() do engine
                 @testset "Basic resource registration" begin
                     resource = register_resource(
                         "aws:s3:Bucket",
@@ -260,15 +262,22 @@
                     # URN is always set
                     @test !isempty(resource.urn)
                 end
-            else
-                @info "Skipping register_resource protocol tests (requires PULUMI_TEST_INTEGRATION=true)"
-                @test_skip true  # Mark as skipped
+
+                @testset "Every registration reached the monitor" begin
+                    registered = [r.name for r in engine.registrations]
+                    @test "conformance-bucket" in registered
+                    @test "protected-instance" in registered
+                    @test "test-table" in registered
+
+                    protected = only(r for r in engine.registrations
+                                     if r.name == "protected-instance")
+                    @test protected.protect
+                end
             end
         end
 
         @testset "Component Resource Protocol" begin
-            # These tests require actual gRPC connection for component registration
-            if get(ENV, "PULUMI_TEST_INTEGRATION", "false") == "true"
+            with_fake_engine() do engine
                 @testset "component() function" begin
                     comp = component("my:module:TestComponent", "test-comp") do parent
                         # Create child resources
@@ -290,16 +299,21 @@
                     @test comp isa ComponentResource
                     @test comp.name == "test-comp"
                     @test comp.type_ == "my:module:TestComponent"
-                    @test length(comp.children) >= 0  # Children tracked
-                end
-            else
-                @info "Skipping component() protocol tests (requires PULUMI_TEST_INTEGRATION=true)"
-                @test_skip true  # Mark as skipped
-            end
+                    @test length(comp.children) == 2
 
-            @testset "register_outputs" begin
-                # register_outputs also requires a gRPC connection
-                if get(ENV, "PULUMI_TEST_INTEGRATION", "false") == "true"
+                    # The component and both children reached the monitor, and
+                    # the children are parented to the component.
+                    component_request = only(r for r in engine.registrations
+                                             if r.name == "test-comp")
+                    @test !component_request.custom
+
+                    for child in ("child-bucket-1", "child-bucket-2")
+                        request = only(r for r in engine.registrations if r.name == child)
+                        @test request.parent == comp.urn
+                    end
+                end
+
+                @testset "register_outputs" begin
                     comp = ComponentResource(
                         "urn:pulumi:test::project::my:module:Test::outputs-test",
                         "my:module:Test",
@@ -308,11 +322,10 @@
                         ResourceOptions(),
                         ResourceState.CREATED
                     )
-                    # Should not throw
                     register_outputs(comp, Dict{String, Any}("key" => Output("value")))
-                else
-                    # Just verify the function exists
-                    @test isdefined(Pulumi, :register_outputs)
+
+                    published = only(o for o in engine.outputs if o.urn == comp.urn)
+                    @test Pulumi.struct_to_dict(published.outputs)["key"] == "value"
                 end
             end
         end

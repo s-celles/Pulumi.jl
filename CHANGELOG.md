@@ -48,6 +48,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   engine parents a program's resources to
 - An in-process fake Pulumi engine for the test suite, so the component and
   stack-export integration tests exercise the real gRPC client stack
+- `just plugin-install`, which installs the language host into
+  `~/.pulumi/plugins` so the Pulumi CLI finds it without a `PATH` entry
+- A CLI-driven integration test covering `pulumi preview`, `up`, `stack output`
+  and `destroy` against a temporary file backend, behind `PULUMI_TEST_INTEGRATION`
 
 ### Fixed
 
@@ -89,6 +93,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   names it defines no longer leak into the package
 
 ### Changed
+
+- The tests that needed a resource monitor now run against the fake engine
+  instead of being skipped: they pointed at hard-coded ports where nothing
+  listened, so enabling `PULUMI_TEST_INTEGRATION` used to fail outright. The
+  suite has no skipped tests left
 
 - The documentation build no longer allows `missing_docs` and `docs_block`
   warnings; every documented symbol is now referenced from the manual

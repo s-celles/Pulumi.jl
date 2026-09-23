@@ -57,6 +57,17 @@ proto-artifact version="":
 plugin-build:
     cd {{plugin_dir}} && go build .
 
+# Install the language host into ~/.pulumi/plugins so the Pulumi CLI finds it.
+plugin-install: plugin-build
+    #!/usr/bin/env bash
+    set -euo pipefail
+    version=$({{julia}} --project=. -e 'using TOML; print(TOML.parsefile("Project.toml")["version"])')
+    dest="${PULUMI_HOME:-$HOME/.pulumi}/plugins/language-julia-v${version}"
+    mkdir -p "$dest"
+    cp {{plugin_dir}}/pulumi-language-julia "$dest/"
+    printf 'resource: false\nname: julia\nversion: %s\n' "$version" > "$dest/PulumiPlugin.yaml"
+    echo "Installed pulumi-language-julia v${version} into $dest"
+
 # Run the Julia language host directly (prints the bound port on stdout).
 plugin-run:
     {{julia}} --project=. src/bin/pulumi-language-julia

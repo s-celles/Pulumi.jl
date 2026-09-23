@@ -21,6 +21,9 @@ engine would.
 - `registrations`: every `RegisterResource` request, in arrival order
 - `outputs`: every `RegisterResourceOutputs` request, in arrival order
 - `logs`: every `Log` request, in arrival order
+- `invokes`: every `Invoke` request, in arrival order
+- `invoke_results`: what `Invoke` returns, keyed by token; a token with no
+  entry comes back with the request's own arguments
 - `root_urn`: the URN returned by `GetRootResource`. It defaults to empty,
   which is what a real engine returns: the root stack resource is registered by
   the SDK, not reported by the engine.
@@ -29,6 +32,8 @@ mutable struct FakeEngine
     registrations::Vector{PB_.RegisterResourceRequest}
     outputs::Vector{PB_.RegisterResourceOutputsRequest}
     logs::Vector{PB_.LogRequest}
+    invokes::Vector{PB_.ResourceInvokeRequest}
+    invoke_results::Dict{String, Dict{String, Any}}
     root_urn::String
     # host:port the fake engine listens on, filled in by `with_fake_engine`.
     address::String
@@ -36,7 +41,8 @@ mutable struct FakeEngine
 
     FakeEngine(; root_urn::String = "") =
         new(PB_.RegisterResourceRequest[], PB_.RegisterResourceOutputsRequest[],
-            PB_.LogRequest[], root_urn, "", ReentrantLock())
+            PB_.LogRequest[], PB_.ResourceInvokeRequest[],
+            Dict{String, Dict{String, Any}}(), root_urn, "", ReentrantLock())
 end
 
 """
@@ -73,6 +79,18 @@ function handle_register_resource_outputs(engine::FakeEngine, ::ServerContext, r
     return Pulumi.pulumirpc.google.protobuf.Empty()
 end
 
+function handle_invoke(engine::FakeEngine, ::ServerContext, request::PB_.ResourceInvokeRequest)
+    lock(engine.lock) do
+        push!(engine.invokes, request)
+    end
+
+    # Without a canned result, echo the arguments back: enough for a caller to
+    # check that the invocation reached the monitor.
+    result = get(engine.invoke_results, request.tok, nothing)
+    returned = result === nothing ? request.args : Pulumi.dict_to_struct(result)
+    return PB_.InvokeResponse(returned, PB_.CheckFailure[])
+end
+
 function handle_log(engine::FakeEngine, ::ServerContext, request::PB_.LogRequest)
     lock(engine.lock) do
         push!(engine.logs, request)
@@ -97,6 +115,11 @@ function gRPCServer.service_descriptor(engine::FakeEngine)
                 "RegisterResourceOutputs", MethodType.UNARY,
                 PB_.RegisterResourceOutputsRequest, Pulumi.pulumirpc.google.protobuf.Empty,
                 (ctx, req) -> handle_register_resource_outputs(engine, ctx, req),
+            ),
+            "Invoke" => MethodDescriptor(
+                "Invoke", MethodType.UNARY,
+                PB_.ResourceInvokeRequest, PB_.InvokeResponse,
+                (ctx, req) -> handle_invoke(engine, ctx, req),
             ),
         ),
     )
