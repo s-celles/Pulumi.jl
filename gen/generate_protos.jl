@@ -49,6 +49,50 @@ function get_proto_dir()
     error("Proto files not found. Run: julia --project=. gen/download_protos.jl")
 end
 
+"""
+    deduplicate_includes!(dir) -> Int
+
+Remove repeated `include(...)` lines from the generated module files.
+
+ProtoBuf.jl emits an `include` for every proto that a module depends on, and
+lists a file once per dependent rather than once in total. Loading the module
+then defines the same `encode`/`decode` methods twice, which Julia reports as
+"Method definition ... overwritten on the same line". Keeping the first
+occurrence preserves the dependency order the generator chose.
+
+Returns the number of duplicate lines removed.
+"""
+function deduplicate_includes!(dir::AbstractString)
+    removed = 0
+
+    for (root, _, files) in walkdir(dir)
+        for file in files
+            endswith(file, ".jl") || continue
+            path = joinpath(root, file)
+
+            seen = Set{String}()
+            kept = String[]
+            changed = false
+            for line in eachline(path)
+                match_result = match(r"^\s*include\(\"(.+)\"\)\s*$", line)
+                if match_result !== nothing
+                    if match_result.captures[1] in seen
+                        removed += 1
+                        changed = true
+                        continue
+                    end
+                    push!(seen, match_result.captures[1])
+                end
+                push!(kept, line)
+            end
+
+            changed && write(path, join(kept, "\n") * "\n")
+        end
+    end
+
+    return removed
+end
+
 function main()
     # Get repository root (parent of gen/ directory)
     repo_root = dirname(@__DIR__)
@@ -119,6 +163,11 @@ function main()
         include_vendored_wellknown_types=true,
         always_use_modules=true,
     )
+
+    duplicates = deduplicate_includes!(output_dir)
+    if duplicates > 0
+        println("Removed $duplicates duplicate include(s) emitted by ProtoBuf.jl")
+    end
 
     println()
     println("Done! Generated files are in: $output_dir")

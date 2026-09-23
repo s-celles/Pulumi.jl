@@ -94,6 +94,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The protobuf bindings are regenerated with ProtoBuf.jl 1.3.0. The previous
+  ones were generated with 1.2.0, and every deployment printed a deprecation
+  warning in the Pulumi CLI's diagnostics
+- `gen/generate_protos.jl` strips the duplicate `include` lines ProtoBuf.jl
+  emits, which otherwise define the same `encode`/`decode` methods twice
 - The tests that needed a resource monitor now run against the fake engine
   instead of being skipped: they pointed at hard-coded ports where nothing
   listened, so enabling `PULUMI_TEST_INTEGRATION` used to fail outright. The

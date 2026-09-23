@@ -83,7 +83,7 @@
 - [ ] **Signal handling under load** — A signal received while Julia is still JIT-compiling the serving loop wedges the process: `atexit` never runs and the port is never released. A plugin sysimage would close that window
 - [ ] **Preview mode** — Properly propagate unknown values through Outputs during `pulumi preview` (FR-025)
 - [ ] **State management** — Ensure resource state is correctly maintained across up/destroy cycles (NFR-013)
-- [ ] **Regenerate the protobuf bindings** — The generated code is from ProtoBuf.jl 1.2.0 and the current version warns that it is deprecated on every run
+- [x] **Regenerate the protobuf bindings** — Regenerated with ProtoBuf.jl 1.3.0, so deployments no longer print a deprecation warning
 - [ ] **Error propagation** — Surface provider errors with full context and actionable messages (NFR-011, NFR-033)
 
 ---
