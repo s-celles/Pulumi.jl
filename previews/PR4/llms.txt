@@ -1,0 +1,28 @@
+# Pulumi.jl
+
+> A community Julia SDK for Pulumi: define cloud infrastructure in Julia.
+
+Pulumi.jl is an experimental, community-developed SDK. It is not an
+official product of Pulumi Corporation.
+
+## Docs
+
+- [Home](https://s-celles.github.io/Pulumi.jl/)
+- [API Reference](https://s-celles.github.io/Pulumi.jl/api/)
+- [Internals](https://s-celles.github.io/Pulumi.jl/internals/)
+- [Maintenance](https://s-celles.github.io/Pulumi.jl/maintenance/)
+
+## Getting Started
+
+- [Installation](https://s-celles.github.io/Pulumi.jl/getting-started/installation/)
+- [Quick Start](https://s-celles.github.io/Pulumi.jl/getting-started/quickstart/)
+
+## Guides
+
+- [Resources](https://s-celles.github.io/Pulumi.jl/guides/resources/)
+- [Outputs](https://s-celles.github.io/Pulumi.jl/guides/outputs/)
+- [Configuration](https://s-celles.github.io/Pulumi.jl/guides/configuration/)
+- [Components](https://s-celles.github.io/Pulumi.jl/guides/components/)
+- [Stack Exports](https://s-celles.github.io/Pulumi.jl/guides/exports/)
+- [Language Host](https://s-celles.github.io/Pulumi.jl/guides/language-host/)
+
