@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/pulumi/pulumi/sdk/v3 v3.136.1
 	google.golang.org/grpc v1.84.0
-	google.golang.org/protobuf v1.36.11
+	google.golang.org/protobuf v1.36.12
 )
 
 require (
